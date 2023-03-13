@@ -59,7 +59,7 @@ float rain_readings[max_readings]        = {0};
 float snow_readings[max_readings]        = {0};
 
 long SleepDuration   = 60; // Sleep time in minutes, aligned to the nearest minute boundary, so if 30 will always update at 00 or 30 past the hour
-int  WakeupHour      = 8;  // Don't wakeup until after 07:00 to save battery power
+int  WakeupHour      = 5;  // Don't wakeup until 05:00 to save battery power
 int  SleepHour       = 23; // Sleep after 23:00 to save battery power
 long StartTime       = 0;
 long SleepTimer      = 0;
@@ -137,15 +137,44 @@ void loop() {
   // Nothing to do here
 }
 
+void print_wakeup_reason(esp_sleep_wakeup_cause_t wakeup_reason){
+
+  switch(wakeup_reason)
+  {
+    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;
+    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
+    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
+    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
+  }
+}
+
 void setup() {
   InitialiseSystem();
+  
   if (StartWiFi() == WL_CONNECTED && SetupTime() == true) {
-    bool WakeUp = false;                
+    bool WakeUp = false;
+    bool ForceRefresh = false;
+
+    esp_sleep_wakeup_cause_t wakeup_reason;
+    wakeup_reason = esp_sleep_get_wakeup_cause();
+    print_wakeup_reason(wakeup_reason);
+
+    // In the case that the board doesn't wake up due to the
+    // RTC timer, go ahead and make sure we refresh the data
+    // no matter what time of day this happens.
+    ForceRefresh = (wakeup_reason != ESP_SLEEP_WAKEUP_TIMER);
+    if (ForceRefresh){
+      Serial.println("Forcing the data to refresh...");
+    }
+
     if (WakeupHour > SleepHour)
       WakeUp = (CurrentHour >= WakeupHour || CurrentHour <= SleepHour); 
     else                             
-      WakeUp = (CurrentHour >= WakeupHour && CurrentHour <= SleepHour);                              
-    if (WakeUp) {
+      WakeUp = (CurrentHour >= WakeupHour && CurrentHour <= SleepHour);    
+
+    if (WakeUp || ForceRefresh) {
       byte Attempts = 1;
       bool RxWeather  = false;
       bool RxForecast = false;
@@ -338,7 +367,7 @@ double NormalizedMoonPhase(int d, int m, int y) {
 }
 
 void DisplayWeather() {                          // 4.7" e-paper display is 960x540 resolution
-  DisplayStatusSection(600, 20, wifi_signal);    // Wi-Fi signal strength and Battery voltage
+  DisplayStatusSection(575, 2, wifi_signal);    // Wi-Fi signal strength and Battery voltage
   DisplayGeneralInfoSection();                   // Top line of the display
   DisplayDisplayWindSection(137, 150, WxConditions[0].Winddir, WxConditions[0].Windspeed, 100);
   DisplayAstronomySection(5, 255);               // Astronomy section Sun rise/set, Moon phase and Moon icon
@@ -351,7 +380,7 @@ void DisplayGeneralInfoSection() {
   setFont(OpenSans10B);
   drawString(5, 2, City, LEFT);
   setFont(OpenSans8B);
-  drawString(500, 2, Date_str + "  @   " + Time_str, LEFT);
+  drawString(450, 2, Date_str + "  @   " + Time_str, LEFT);
 }
 
 void DisplayWeatherIcon(int x, int y) {
@@ -632,7 +661,7 @@ void DrawPressureAndTrend(int x, int y, float pressure, String slope) {
 
 void DisplayStatusSection(int x, int y, int rssi) {
   setFont(OpenSans8B);
-  DrawRSSI(x + 305, y + 15, rssi);
+  DrawRSSI(x + 325, y + 24, rssi);
   DrawBattery(x + 150, y);
 }
 
@@ -692,10 +721,10 @@ void DrawBattery(int x, int y) {
     percentage = 2836.9625 * pow(voltage, 4) - 43987.4889 * pow(voltage, 3) + 255233.8134 * pow(voltage, 2) - 656689.7123 * voltage + 632041.7303;
     if (voltage >= 4.20) percentage = 100;
     if (voltage <= 3.20) percentage = 0;  // orig 3.5
-    drawRect(x + 25, y - 14, 40, 15, Black);
-    fillRect(x + 65, y - 10, 4, 7, Black);
-    fillRect(x + 27, y - 12, 36 * percentage / 100.0, 11, Black);
-    drawString(x + 85, y - 14, String(percentage) + "%  " + String(voltage, 1) + "v", LEFT);
+    drawRect(x + 25, y, 40, 15, Black);
+    fillRect(x + 65, y + 4, 4, 7, Black);
+    fillRect(x + 27, y + 2, 36 * percentage / 100.0, 11, Black);
+    drawString(x + 85, y, String(percentage) + "%  " + String(voltage, 1) + "v", LEFT);
   }
 }
 
