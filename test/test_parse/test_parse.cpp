@@ -37,7 +37,6 @@ void test_init_state() {
   TEST_ASSERT_TRUE(isnan(wd.cur.tempF));
   TEST_ASSERT_TRUE(isnan(wd.hist[3].tempF));
   TEST_ASSERT_FALSE(wd.hist[3].valid);
-  TEST_ASSERT_FALSE(wd.rainMonthYearKnown);
   TEST_ASSERT_FALSE(wd.today.valid);
 }
 
@@ -173,24 +172,7 @@ void test_obs_rain_rate_conversion() {
   TEST_ASSERT_TRUE(isnan(wd.cur.rainTodayIn));
 }
 
-// ------------------------------------------------------------ stats / stations
-void test_stats_fixture() {
-  weatherDataInit(wd);
-  std::string j = load("stats.json");
-  TEST_ASSERT_EQUAL(PARSE_OK, parseStats(j.c_str(), j.size(), 2026, 11, wd));
-  TEST_ASSERT_TRUE(wd.rainMonthYearKnown);
-  TEST_ASSERT_FLOAT_WITHIN(0.001f, 66.3078f / 25.4f, wd.rainMonthIn);
-  TEST_ASSERT_FLOAT_WITHIN(0.001f, 800.497f / 25.4f, wd.rainYearIn);
-  TEST_ASSERT_TRUE(wd.have & HAVE_STATS);
-}
-void test_stats_wrong_month_is_unknown() {
-  weatherDataInit(wd);
-  std::string j = load("stats.json");
-  TEST_ASSERT_EQUAL(PARSE_ERR_STRUCTURE, parseStats(j.c_str(), j.size(), 2026, 12, wd));
-  TEST_ASSERT_FALSE(wd.rainMonthYearKnown);
-  TEST_ASSERT_TRUE(isnan(wd.rainMonthIn));
-  TEST_ASSERT_EQUAL(PARSE_OK, parseStats(j.c_str(), j.size(), 0, 0, wd));   // no date check
-}
+// ------------------------------------------------------------ stations
 void test_stations_fixture() {
   uint32_t dev = 0;
   std::string j = load("stations.json");
@@ -394,14 +376,13 @@ void test_garbage_and_truncated() {
     uint32_t dev = 0;
     TEST_ASSERT_EQUAL_MESSAGE(PARSE_ERR_JSON, parseBetterForecast(b, strlen(b), wd), b);
     TEST_ASSERT_EQUAL_MESSAGE(PARSE_ERR_JSON, parseStationObs(b, strlen(b), wd), b);
-    TEST_ASSERT_EQUAL_MESSAGE(PARSE_ERR_JSON, parseStats(b, strlen(b), 0, 0, wd), b);
     TEST_ASSERT_EQUAL_MESSAGE(PARSE_ERR_JSON, parseStations(b, strlen(b), 0, dev), b);
     TEST_ASSERT_EQUAL_MESSAGE(PARSE_ERR_JSON, parseDeviceHistory(b, strlen(b), noDay(), wd), b);
     TEST_ASSERT_FALSE(wd.valid);
   }
 }
 void test_truncated_fixtures() {
-  const char* names[] = {"better_forecast.json", "station_obs.json", "stats.json", "stations.json", "device_history.json"};
+  const char* names[] = {"better_forecast.json", "station_obs.json", "stations.json", "device_history.json"};
   for (const char* n : names) {
     weatherDataInit(wd);
     std::string j = load(n);
@@ -412,8 +393,7 @@ void test_truncated_fixtures() {
       case 'b': s = parseBetterForecast(j.c_str(), j.size(), wd); break;
       case 'd': s = parseDeviceHistory(j.c_str(), j.size(), fixtureWindow(), wd); break;
       case 's': if (n[2] == 'a' && n[3] == 't' && n[4] == 'i') s = parseStations(j.c_str(), j.size(), 0, dev);
-                else if (n[5] == 'o') s = parseStationObs(j.c_str(), j.size(), wd);
-                else s = parseStats(j.c_str(), j.size(), 0, 0, wd);
+                else s = parseStationObs(j.c_str(), j.size(), wd);
                 break;
     }
     TEST_ASSERT_EQUAL_MESSAGE(PARSE_ERR_JSON, s, n);
@@ -425,12 +405,10 @@ void test_api_error_and_structure() {
   uint32_t dev = 0;
   TEST_ASSERT_EQUAL(PARSE_ERR_API, parseBetterForecast(e, strlen(e), wd));
   TEST_ASSERT_EQUAL(PARSE_ERR_API, parseStationObs(e, strlen(e), wd));
-  TEST_ASSERT_EQUAL(PARSE_ERR_API, parseStats(e, strlen(e), 0, 0, wd));
   TEST_ASSERT_EQUAL(PARSE_ERR_API, parseStations(e, strlen(e), 0, dev));
   const char* s = "{}";
   TEST_ASSERT_EQUAL(PARSE_ERR_STRUCTURE, parseBetterForecast(s, strlen(s), wd));
   TEST_ASSERT_EQUAL(PARSE_ERR_STRUCTURE, parseStationObs(s, strlen(s), wd));
-  TEST_ASSERT_EQUAL(PARSE_ERR_STRUCTURE, parseStats(s, strlen(s), 0, 0, wd));
   TEST_ASSERT_EQUAL(PARSE_ERR_STRUCTURE, parseStations(s, strlen(s), 0, dev));
   TEST_ASSERT_FALSE(wd.valid);
 }
@@ -458,8 +436,6 @@ int main() {
   RUN_TEST(test_station_obs_fixture);
   RUN_TEST(test_obs_and_forecast_order_independent);
   RUN_TEST(test_obs_rain_rate_conversion);
-  RUN_TEST(test_stats_fixture);
-  RUN_TEST(test_stats_wrong_month_is_unknown);
   RUN_TEST(test_stations_fixture);
   RUN_TEST(test_bucket_boundaries);
   RUN_TEST(test_bucket_averages_sums_gaps);

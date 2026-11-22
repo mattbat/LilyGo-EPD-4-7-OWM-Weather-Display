@@ -29,8 +29,7 @@ enum PressureTrend : int8_t { TREND_FALLING = -1, TREND_STEADY = 0, TREND_RISING
 enum : uint8_t {
   HAVE_FORECAST = 1,   // current conditions + hourly + daily from better_forecast
   HAVE_OBS      = 2,   // station observation (rain rate, lightning, ...)
-  HAVE_HISTORY  = 4,   // 24 h history buckets + day summary
-  HAVE_STATS    = 8    // rain month/year
+  HAVE_HISTORY  = 4    // 24 h history buckets + day summary
 };
 
 struct CurrentConditions {
@@ -116,9 +115,6 @@ struct WeatherData {
   HourlyFc hourly[HOURLY_FC_MAX];
   uint8_t dailyCount;
   DailyFc daily[DAILY_FC_MAX];
-
-  bool  rainMonthYearKnown;
-  float rainMonthIn, rainYearIn;
 
   // Set by the firmware (not parsed from JSON):
   float pressureOffsetMb;   // sea level minus station pressure from the station obs (NAN unknown)

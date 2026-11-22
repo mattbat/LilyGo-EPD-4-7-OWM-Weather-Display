@@ -79,7 +79,6 @@ Base URL `https://swd.weatherflow.com/swd/rest`, auth with `?token=<personal acc
 | `GET /observations/station/ID` | Lightning count last 3 h (`lightning_strike_count_last_3hr`), last strike distance (`lightning_strike_last_distance`), rain yesterday (`precip_accum_local_yesterday`), rain rate (`precip` last minute ×60, or `precip_accum_last_1hr`; check which behaves well on real data) |
 | `GET /observations/device/DEVICE_ID?time_start=T-24h&time_end=now` | Last 24 h history for the chart and the overnight summary. `obs` is an array of arrays; `obs_st` field order: 0 epoch, 2 wind avg m/s, 3 gust m/s, 4 dir, 6 pressure mb, 7 temp C, 8 RH, 10 UV, 11 solar W/m², 12 rain mm in interval, 15 lightning count, 16 battery V |
 | `GET /stations` | Look up the device ID once if `TEMPEST_DEVICE_ID` is 0 (the device with `device_type` "ST"). Cache it in NVS. |
-| `GET /stats/station/ID` (unverified) | Rain this month and this year. If it doesn't work with a personal token, sum daily rain from history each day and keep month/year totals in NVS. |
 
 Notes for the implementer:
 - History is metric regardless of unit params: convert in `units.cpp`.
@@ -202,3 +201,5 @@ Tasks 1-6 are merged. The firmware runs on the board: WiFi, all Tempest calls, r
 - [ ] **Calibrate the battery reading.** The board reports 4.87 V, above an 18650's 4.2 V maximum. Confirm whether the battery was connected, compare with a multimeter, and fix the divider factor in battery.cpp (and the Charge me thresholds if needed).
 - [ ] Confirm GitHub CI passes on Linux, especially the golden checksums in test/test_screens.
 - [ ] Measure deep-sleep current if possible, and update the battery-life estimate.
+
+- [x] Removed the daily `/stats/station` download (rain this month/year). No screen shows those totals any more, so it only cost ~4.5 s of WiFi per day.

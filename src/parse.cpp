@@ -62,7 +62,6 @@ void weatherDataInit(WeatherData& d) {
   for (HistBucket& b : d.hist) b.tempF = b.windMph = b.gustMph = b.humidityPct = b.pressureInHg = NAN;
   DaySummary& s = d.today;
   s.highF = s.lowF = s.rainIn = s.peakGustMph = s.lastTempF = s.lastWindMph = s.lastHumidityPct = NAN;
-  d.rainMonthIn = d.rainYearIn = NAN;
   d.pressureOffsetMb = NAN;
 }
 
@@ -94,12 +93,6 @@ void makeStationObsFilter(JsonDocument& f) {
                      "lightning_strike_count_last_1hr", "lightning_strike_count_last_3hr",
                      "lightning_strike_last_distance", "lightning_strike_last_epoch"};
   for (const char* x : k) f["obs"][0][x] = true;
-}
-
-void makeStatsFilter(JsonDocument& f) {
-  f["status"]["status_code"] = true;
-  f["stats_month"] = true;
-  f["stats_year"] = true;
 }
 
 void makeStationsFilter(JsonDocument& f) {
@@ -217,36 +210,6 @@ ParseStatus applyStationObs(JsonVariantConst root, WeatherData& out) {
   }
   out.have |= HAVE_OBS;
   out.valid = true;
-  return PARSE_OK;
-}
-
-// ---------------------------------------------------------------- stats
-static const int kStatsRainCol = 28;   // total rain (mm) for the period, see docs in parse.h
-
-static bool statsRow(JsonVariantConst arr, const char* prefix, size_t plen, float& mm) {
-  JsonArrayConst a = arr.as<JsonArrayConst>();
-  if (a.isNull() || a.size() == 0) return false;
-  JsonArrayConst row = a[a.size() - 1];
-  if (row.isNull() || row.size() <= (size_t)kStatsRainCol) return false;
-  if (plen) {
-    const char* d = row[0] | "";
-    if (strncmp(d, prefix, plen) != 0) return false;
-  }
-  return getF(row[kStatsRainCol], mm);
-}
-
-ParseStatus applyStats(JsonVariantConst root, int year, int month, WeatherData& out) {
-  ParseStatus st = checkStatus(root);
-  if (st != PARSE_OK) return st;
-  char py[8] = {0}, pm[12] = {0};
-  if (year > 0) { snprintf(py, sizeof py, "%04d-", year); snprintf(pm, sizeof pm, "%04d-%02d-", year, month); }
-  float m, y;
-  if (!statsRow(root["stats_month"], pm, strlen(pm), m) || !statsRow(root["stats_year"], py, strlen(py), y))
-    return PARSE_ERR_STRUCTURE;
-  out.rainMonthIn = mmToIn(m);
-  out.rainYearIn = mmToIn(y);
-  out.rainMonthYearKnown = true;
-  out.have |= HAVE_STATS;
   return PARSE_OK;
 }
 

@@ -355,7 +355,7 @@ void test_every_field_nan_individually() {
   TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
   float* fields[] = {&d.cur.tempF, &d.cur.feelsLikeF, &d.cur.windMph, &d.cur.gustMph, &d.cur.dewPointF, &d.cur.pressureInHg,
                      &d.cur.rainTodayIn, &d.cur.rainYesterdayIn, &d.cur.rainRateInHr, &d.cur.uv, &d.cur.lastStrikeMi,
-                     &d.cur.stationBatteryV, &d.rainMonthIn, &d.rainYearIn, &d.today.highF, &d.today.lowF, &d.today.rainIn,
+                     &d.cur.stationBatteryV, &d.today.highF, &d.today.lowF, &d.today.rainIn,
                      &d.today.peakGustMph, &d.today.lastTempF, &d.daily[1].highF, &d.daily[1].lowF, &d.hourly[3].tempF,
                      &d.hist[5].tempF, &d.hist[23].tempF, &d.hist[7].rainIn};
   ScreenStatus st = status();
