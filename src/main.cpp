@@ -14,6 +14,7 @@
 #include "screens.h"
 #include "tempest_api.h"
 #include "weather_data.h"
+#include "wake_log.h"
 
 // ---- RTC memory (8 KB slow RAM, survives deep sleep, cleared on power loss) ----
 struct RtcState {
@@ -31,6 +32,7 @@ static const int32_t FALLBACK_SLEEP_S = 15 * 60;   // when there is no clock at 
 
 static void goToSleep(int32_t seconds, uint32_t t0) {
   netOff();
+  wakeLogDone(millis() - t0);
   Serial.printf("awake %lu ms, sleeping %ld s\n", (unsigned long)(millis() - t0), (long)seconds);
   Serial.flush();
   esp_sleep_enable_timer_wakeup((uint64_t)seconds * 1000000ULL);
@@ -78,6 +80,14 @@ void setup() {
 
   const float volts = readBatteryVolts();
   Serial.printf("wake reason %d, battery %.2f V (%d%%)\n", (int)reason, volts, batteryPercent(volts));
+  wakeLogBegin(isnan(volts) ? 0 : (uint16_t)(volts * 1000));
+
+  // A brownout reset means the battery sagged under load (WiFi or the panel refresh). Trying
+  // again right away just repeats it and drains the cell, so rest for 2 hours without WiFi or display.
+  if (wakeLogLastWasBrownout()) {
+    Serial.println("brownout reset: battery too weak, sleeping 2 h");
+    goToSleep(2 * 3600, t0);
+  }
 
   // ---- first plan: handles charge-me without WiFi; also covers stray timer wakes if the RTC clock survived
   ScheduleInput in;
@@ -95,6 +105,7 @@ void setup() {
     if (plan.drawChargeMe) {
       drawChargeMe(g, makeStatus(in.timeValid ? in.nowEpoch : 0, volts, false,
                                  g_rtc.cacheValid ? (int64_t)g_cache.fetchedEpoch : 0));
+      wakeLogStage(STAGE_DISPLAY);
       displayShow(g.fb);
     }
     goToSleep(plan.sleepSeconds, t0);
@@ -102,6 +113,7 @@ void setup() {
   if (plan.action == Action::SleepOnly) goToSleep(sleepSecondsUntil(plan.wakeEpoch, time(nullptr)), t0);
 
   // ---- WiFi + NTP, then plan again with a trustworthy clock
+  wakeLogStage(STAGE_NET);
   bool wifi = netConnect(WIFI_TIMEOUT_MS);
   Serial.printf("wifi %s (%lu ms)\n", wifi ? "ok" : "FAILED", (unsigned long)(millis() - t0));
   if (wifi) netSyncTime(8000);
@@ -152,6 +164,7 @@ void setup() {
     drawOvernight(g, data, st, plan.titles == TitlesMode::YesterdayToday ? TITLES_YESTERDAY_TODAY : TITLES_TODAY_TOMORROW);
   }
   Serial.printf("render done (%lu ms)\n", (unsigned long)(millis() - t0));
+  wakeLogStage(STAGE_DISPLAY);
   displayShow(g.fb);
   Serial.printf("display done (%lu ms)\n", (unsigned long)(millis() - t0));
   g_rtc.chargeMeShown = false;   // the panel now shows something else
