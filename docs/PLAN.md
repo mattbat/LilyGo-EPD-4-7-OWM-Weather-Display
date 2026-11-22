@@ -173,6 +173,13 @@ test/fixtures/
 - Sizes used across the three screens: regular 13, 14, 15, 16, 17, 18, 20, 22, 44; bold 13, 14, 15, 17, 18, 19, 20, 22, 32, 42, 50, 76, 84, 136. For 84 and 136 include only digits, degree sign, minus and slash. Merge sizes that look identical on the panel to save build time.
 - Include the degree sign (U+00B0), middle dot (U+00B7), and arrows (U+2191, U+2193) in the character ranges.
 
+## Testing and CI (required for every task)
+
+- **Every portable module gets Unity tests** under `test/` run by `pio test -e native`: gfx (pixel/line/rect/text bounds checked against framebuffer contents), fonts (glyph lookup, text width), units, parse (all fixtures), history bucketing and day summary, smart slot (each priority case), schedule (every wake case, DST days, midnight), charts (scaling and auto-range math), screens (render each screen from fixtures without crashing, plus golden-image checksums or pixel spot checks for key regions). A task is not done until its tests exist and pass.
+- ESP32-only modules (`tempest_api`, `display_hw`, `battery`, `main`) keep their logic thin: anything testable (URL building, voltage-to-percent, retry decisions) lives in a portable helper with tests.
+- **GitHub Actions** (`.github/workflows/ci.yml`, added in task 1): on every push and PR, copy `secrets.example.h` to `secrets.h`, run `pio test -e native`, build `native` and upload the screen preview PNGs as an artifact, build `t5-47` and upload `firmware.bin`.
+- **Release** (`.github/workflows/release.yml`): on a `v*` tag, build `t5-47` and attach the binaries to a GitHub Release. These binaries hold placeholder settings; the real device is flashed from a local build with the real `secrets.h`.
+
 ## Implementation tasks (for Sonnet subagents)
 
 Run in this order. Tasks 2, 3 and 4 can run in parallel once task 1 is merged. Each task ends with a commit on its own branch.
