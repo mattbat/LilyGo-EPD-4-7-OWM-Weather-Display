@@ -1,2 +1,6 @@
+# Private settings (WiFi password, Tempest token)
+include/secrets.h
 owm_credentials.h
 .vscode
+.pio/
+out/
