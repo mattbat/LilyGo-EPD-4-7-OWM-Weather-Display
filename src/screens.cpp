@@ -25,6 +25,8 @@
 // ---------------------------------------------------------------------------------------------
 namespace {
 int g_anomalies = 0;
+float g_nightHi = NAN, g_nightLo = NAN;   // labelled high / low of the overnight chart (test hook)
+float tC_lo(const float* v) { float lo = 1e9f; for (int i = 0; i < 25; i++) if (isfinite(v[i]) && v[i] < lo) lo = v[i]; return lo; }
 char g_lastAnomaly[64] = "";
 
 bool hasBadToken(const char* s) {
@@ -435,17 +437,40 @@ int64_t drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitle
   snprintf(title, sizeof title, "%s " MID_DOT " %s", titles == TITLES_TODAY_TOMORROW ? "TOMORROW" : "TODAY", dow);
   txt(g, 480, 102, title, AtkB22, COL_K, ALIGN_LEFT, 2);
 
-  // hourly series 5 AM - 10 PM for that date
-  float temp[18], pop[18];
-  for (int i = 0; i < 18; i++) { temp[i] = NAN; pop[i] = NAN; }
+  // hourly series for the whole day: hours 0..23 plus 12 AM of the next day as point 24.
+  // Hours that are already over (only after midnight, i.e. TODAY mode) use the measured history buckets
+  // (solid line, solid rain bars); everything else is forecast (dashed line, outlined probability bars).
+  float tF[25], tM[25], pop[24], rainM[24];
+  for (int i = 0; i < 25; i++) { tF[i] = NAN; tM[i] = NAN; }
+  for (int i = 0; i < 24; i++) { pop[i] = NAN; rainM[i] = NAN; }
+  struct tm nt;
+  localTm(dayRef + 86400, &nt);
   for (int i = 0; i < d.hourlyCount && i < HOURLY_FC_MAX; i++) {
     const HourlyFc& h = d.hourly[i];
     struct tm ht;
-    if (!localTm(h.time, &ht) || ht.tm_yday != dt.tm_yday || ht.tm_year != dt.tm_year) continue;
-    if (ht.tm_hour < 5 || ht.tm_hour > 22) continue;
-    temp[ht.tm_hour - 5] = h.tempF;
-    pop[ht.tm_hour - 5] = (float)h.precipProbPct;
+    if (!localTm(h.time, &ht)) continue;
+    if (ht.tm_yday == dt.tm_yday && ht.tm_year == dt.tm_year) { tF[ht.tm_hour] = h.tempF; pop[ht.tm_hour] = (float)h.precipProbPct; }
+    else if (ht.tm_yday == nt.tm_yday && ht.tm_year == nt.tm_year && ht.tm_hour == 0) tF[24] = h.tempF;
   }
+  int lastM = -1;
+  if ((d.have & HAVE_HISTORY) && d.histStartEpoch) {
+    for (int j = 0; j < HIST_BUCKETS; j++) {
+      int64_t bs = (int64_t)d.histStartEpoch + (int64_t)j * 3600;
+      struct tm bt;
+      if (bs + 3600 > now || !d.hist[j].valid || !localTm(bs, &bt)) continue;
+      if (bt.tm_yday != dt.tm_yday || bt.tm_year != dt.tm_year) continue;
+      tM[bt.tm_hour] = d.hist[j].tempF;
+      rainM[bt.tm_hour] = isfinite(d.hist[j].rainIn) ? d.hist[j].rainIn : 0;
+      pop[bt.tm_hour] = NAN;
+      if (bt.tm_hour > lastM) lastM = bt.tm_hour;
+    }
+  }
+  if (lastM >= 0) {                                   // forecast takes over after the last measured hour, joined there
+    for (int i = 0; i <= lastM; i++) tF[i] = NAN;
+    tF[lastM] = tM[lastM];
+  }
+  float tC[25];                                       // what the chart shows (and what hi / lo are taken from)
+  for (int i = 0; i < 25; i++) tC[i] = isfinite(tM[i]) ? tM[i] : tF[i];
 
   // icon, hi "/ lo", condition
   if (have) drawIcon(g, df->icon, 532, 160, 0.75f);
@@ -466,38 +491,53 @@ int64_t drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitle
   txtFit(g, 480, 220, dcond[0] ? dcond : (have ? "--" : "Forecast unavailable"), cf, 2, 936 - 480, COL_K);
   rule(g, 234);
 
-  // chart: dashed temperature line, hairline degree gridlines, peak label
+  // chart: true time, 12 AM to 12 AM (hour h at cx + h * 35, bars span [h, h+1))
   const int cx = 84, cy = 280, cw = 840, ch = 112;
-  const float bw = (float)cw / 18;
-  AxisRange ax = autoRange(temp, 18, 5, 3);
-  ChartRect full{cx, cy, cw, ch};
-  ChartRect lr{cx, cy, (int)lroundf(17 * bw), ch};   // true time: hour h (5..22) at cx + (h - 5) * bw; bars span [h, h+1)
+  const float bw = (float)cw / 24;
+  AxisRange ax = autoRange(tC, 25, 5, 3);
+  while (ax.valid && (tC_lo(tC) - ax.min) / (ax.max - ax.min) * ch < 36) ax.min -= 5;   // room for the low label below its dot
+  ChartRect full{cx, cy, cw, ch}, lr{cx, cy, cw, ch};
+  g_nightHi = g_nightLo = NAN;
+  const int ry = 404, rh = 48;
+  for (int h = 0; h <= 24; h += 6) g.vline(cx + (int)lroundf(h * bw), cy - 8, ry + rh - (cy - 8), COL_L);
   if (ax.valid) {
     drawGrid(g, full, ax, AtkR20, ax.max - ax.min > 30 ? 10.0f : 5.0f, COL_L, COL_K);
+    LineStyle ms; ms.thickness = 4;
+    drawLineSeries(g, tM, 25, lr, ax, ms);
     LineStyle ls; ls.thickness = 4; ls.dashed = true; ls.dash = 12; ls.gap = 8;
-    drawLineSeries(g, temp, 18, lr, ax, ls);
-    int pk = hiLoIndex(temp, 18, true, 0);
-    float px, py;
-    if (pk >= 0 && seriesPoint(temp, 18, pk, lr, ax, &px, &py)) {
+    drawLineSeries(g, tF, 25, lr, ax, ls);
+    int ih = hiLoIndex(tC, 24, true, 0), il = hiLoIndex(tC, 24, false, 0);   // hours 0..23 of the day itself
+    for (int w = 0; w < 2; w++) {
+      int idx = w == 0 ? ih : il;
+      float px, py;
+      if (idx < 0 || (w == 1 && idx == ih) || !seriesPoint(tC, 25, idx, lr, ax, &px, &py)) continue;
       g.fillCircle((int)lroundf(px), (int)lroundf(py), 6, COL_K);
       char t[16];
-      formatDegrees(t, sizeof t, temp[pk]);
+      formatDegrees(t, sizeof t, tC[idx]);
       int lx = (int)lroundf(px);
-      if (lx < cx + 34) lx = cx + 34;
-      if (lx > cx + cw - 34) lx = cx + cw - 34;
-      knockoutText(g, lx, (int)lroundf(py) - 18, t, AtkB28, ALIGN_CENTER);
-      txt(g, lx, (int)lroundf(py) - 18, t, AtkB28, COL_K, ALIGN_CENTER);
+      if (lx < cx + 30) lx = cx + 30;
+      if (lx > cx + cw - 30) lx = cx + cw - 30;
+      int by = w == 0 ? (int)lroundf(py) - 18 : (int)lroundf(py) + 32;
+      knockoutText(g, lx, by, t, AtkB28, ALIGN_CENTER);
+      txt(g, lx, by, t, AtkB28, COL_K, ALIGN_CENTER);
+      (w == 0 ? g_nightHi : g_nightLo) = (float)lroundf(tC[idx]);
     }
   } else {
     txt(g, cx + cw / 2, cy + ch / 2 + 8, "no forecast", AtkR22, COL_K, ALIGN_CENTER);
   }
 
-  // precipitation probability bars; the percentage sits just above its own bar (only bars of 10 % or more)
-  const int ry = 404, rh = 48;
-  drawProbBars(g, pop, 18, ChartRect{cx, ry, cw, rh}, COL_K, 6);
+  // rain: measured hours solid, forecast hours outlined with their probability above the bar (10 % or more)
+  float rmax = 0.05f;
+  for (int h = 0; h < 24; h++) if (isfinite(rainM[h]) && rainM[h] > rmax) rmax = rainM[h];
+  for (int h = 0; h < 24; h++) {
+    if (!isfinite(rainM[h]) || rainM[h] <= 0) continue;
+    int bh = barHeight(rainM[h], rmax, rh, 5);
+    g.fillRect(cx + (int)lroundf(h * bw) + 3, ry + rh - bh, (int)lroundf(bw) - 6, bh, COL_K);
+  }
+  drawProbBars(g, pop, 24, ChartRect{cx, ry, cw, rh}, COL_K, 6);
   g.hline(cx, ry + rh, cw, COL_K);
   int lastRight = -1000;
-  for (int k = 0; k < 18; k++) {
+  for (int k = 0; k < 24; k++) {
     if (!isfinite(pop[k]) || pop[k] < 10) continue;
     char t[8];
     snprintf(t, sizeof t, "%d%%", (int)lroundf(pop[k]));
@@ -508,10 +548,10 @@ int64_t drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitle
     lastRight = x + w / 2;
   }
   txt(g, cx - 10, ry + rh, "rain", AtkR20, COL_K, ALIGN_RIGHT);
-  for (int k = 0; k < 18; k += 4) {
+  for (int h = 0; h <= 24; h += 6) {
     char lb[16];
-    formatHourLabel(lb, sizeof lb, 5 + k);
-    txt(g, cx + (int)lroundf(k * bw), 482, lb, AtkR22, COL_K, ALIGN_CENTER);
+    formatHourLabel(lb, sizeof lb, h % 24);
+    txt(g, cx + (int)lroundf(h * bw), 482, lb, AtkR22, COL_K, ALIGN_CENTER);
   }
   return have ? (int64_t)df->sunrise : 0;
 }
@@ -524,6 +564,8 @@ int64_t drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitle
 int liveChartX(int64_t epoch, int64_t nowT) {
   return CH_X + (int)lround((double)(epoch - (nowT - CH_BACK_S)) * CH_W / (CH_BACK_S + CH_FWD_S));
 }
+float screenNightChartHigh() { return g_nightHi; }
+float screenNightChartLow() { return g_nightLo; }
 int screenTextAnomalies() { return g_anomalies; }
 const char* screenLastAnomaly() { return g_lastAnomaly; }
 void screenTextAnomaliesReset() { g_anomalies = 0; g_lastAnomaly[0] = 0; }

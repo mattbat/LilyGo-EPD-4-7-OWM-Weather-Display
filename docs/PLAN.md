@@ -60,10 +60,10 @@ Drawn by the 10:00 PM wake, then the board sleeps until 5:00 AM. It must not loo
 - **Black header bar** (0-64): location label (bold 22, letter-spaced), moon, `Paused until 5 AM` (bold 24), all white.
 - **TODAY row** (left, x 28-440): High / Low / Rain, 22 px labels over 50 px bold values. Vertical rule at x 452.
 - **TOMORROW · <DAY>** (right): icon, high 76 px bold, `/ low` 44 px, condition 28 px bold right-aligned. Rule at y 212.
-- **Chart** (tomorrow 5 AM-10 PM): dashed 4 px temperature line, hairline degree gridlines with 20 px labels, peak temperature labelled (bold 28, paper knockout, 6 px dot), outlined precipitation-probability bars with the percentage (bold 20) above every 3rd bar, "rain" axis label, time labels every 4 h (22 px, y 482).
+- **Chart** (the target day, 12 AM to 12 AM, true-time axis): dashed 4 px temperature line, hairline degree gridlines with 20 px labels, BOTH the high and the low labelled (bold 28, paper knockout, 6 px dot; taken from the plotted hourly data, so they can differ from the daily numbers in the header), outlined precipitation-probability bars with the percentage (bold 20) above each bar of 10 % or more, "rain" axis label, time labels and hairlines every 6 h (22 px, y 482). In TODAY mode hours already past use measured history (solid line, solid rain bars), the rest the forecast, joined at the last measured hour.
 - **Footer** (rule at y 500): centred 22 px `Sunrise 6:59 AM · Last data 10:00 PM`.
 
-If the user presses reset during quiet hours (after midnight), fetch fresh data and draw this screen with the left row titled "YESTERDAY" and the right titled "TODAY · <DAY>" (the chart then covers today 5 AM-10 PM). Then sleep until 5:00 AM.
+If the user presses reset during quiet hours (after midnight), fetch fresh data and draw this screen with the left row titled "YESTERDAY" and the right titled "TODAY · <DAY>" (the chart then covers today, 12 AM-12 AM). Then sleep until 5:00 AM.
 
 ## Screen 3: Charge me
 

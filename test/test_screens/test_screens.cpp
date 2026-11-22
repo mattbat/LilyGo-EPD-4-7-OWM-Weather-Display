@@ -106,10 +106,10 @@ static const Golden kGolden[] = {
   {"live_offline", 0xEEDF4B55u, 48460},
   {"live_nohistory", 0x240041F1u, 39103},
   {"live_rain6h", 0x025A3107u, 42672},
-  {"overnight_today", 0x9A7D9956u, 80464},
-  {"overnight_yesterday", 0x203918BDu, 80347},
-  {"overnight_cold", 0x6EDDBD2Bu, 78605},
-  {"overnight_hot", 0xDB5DCC77u, 79572},
+  {"overnight_today", 0xFE16F621u, 82755},
+  {"overnight_yesterday", 0x50335DA6u, 82638},
+  {"overnight_cold", 0x20D5A438u, 80735},
+  {"overnight_hot", 0x846A3CF6u, 80562},
   {"charge_me", 0xD4E18531u, 24644},
   {"error", 0xF7BC3272u, 14568},
 };
@@ -250,11 +250,56 @@ void test_overnight_top_never_touches() {
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(937, 190, 959, 230, COL_PAPER), c);
   }
 }
+void test_overnight_chart_true_time_full_day_and_hilo() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
+  // hour h sits at x = 84 + 35 h: hairline + label every 6 h (12 AM, 6 AM, 12 PM, 6 PM, 12 AM)
+  for (int h = 0; h <= 24; h += 6) {
+    int x = 84 + 35 * h;
+    TEST_ASSERT_TRUE(countNot(x, 300, x, 440, COL_PAPER) > 60);
+    TEST_ASSERT_TRUE(countNot(x - 12, 462, x + 12, 486, COL_PAPER) > 30);
+  }
+  TEST_ASSERT_TRUE(countNot(84 + 35 * 9, 300, 84 + 35 * 9, 440, COL_PAPER) < 60);   // no hairline at 9 AM
+  // labelled high / low are the max / min of the plotted hourly temperatures (hours 0..23 of tomorrow)
+  float mx = -1e9f, mn = 1e9f;
+  struct tm day;
+  TEST_ASSERT_TRUE(localTm((int64_t)d.daily[1].dayStart + 12 * 3600, &day));
+  for (int i = 0; i < d.hourlyCount; i++) {
+    struct tm ht;
+    localTm(d.hourly[i].time, &ht);
+    if (ht.tm_yday != day.tm_yday || ht.tm_year != day.tm_year) continue;
+    if (d.hourly[i].tempF > mx) mx = d.hourly[i].tempF;
+    if (d.hourly[i].tempF < mn) mn = d.hourly[i].tempF;
+  }
+  TEST_ASSERT_EQUAL_FLOAT(lroundf(mx), screenNightChartHigh());
+  TEST_ASSERT_EQUAL_FLOAT(lroundf(mn), screenNightChartLow());
+  TEST_ASSERT_EQUAL_FLOAT(59, screenNightChartHigh());              // the header shows 59 / 40 for the same day
+  TEST_ASSERT_EQUAL_FLOAT(40, screenNightChartLow());
+  TEST_ASSERT_EQUAL_FLOAT(lroundf(d.daily[1].highF), screenNightChartHigh());
+  TEST_ASSERT_EQUAL_FLOAT(lroundf(d.daily[1].lowF), screenNightChartLow());
+  // both labels are on the chart, inside it
+  TEST_ASSERT_TRUE(countNot(84, 236, 924, 290, COL_PAPER) > 200);
+}
+void test_overnight_today_mode_uses_measured_hours() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  sceneAdvanceDay(d);
+  ScreenStatus st = status();
+  st.nowEpoch = FIXTURE_DAY_START + 86400 + 3600;           // 1:00 AM Sunday
+  st.lastGoodEpoch = st.nowEpoch;
+  // measured hour 0 of Sunday: bucket 22 when bucket 0 starts 22 h before midnight
+  d.histStartEpoch = (uint32_t)(FIXTURE_DAY_START + 86400 - 22 * 3600);
+  d.have |= HAVE_HISTORY;
+  for (int i = 0; i < HIST_BUCKETS; i++) d.hist[i].valid = false;
+  d.hist[22].valid = true; d.hist[22].tempF = 75.0f; d.hist[22].rainIn = 0.1f;
+  drawOvernight(g, d, st, TITLES_YESTERDAY_TODAY);
+  TEST_ASSERT_EQUAL_FLOAT(75, screenNightChartHigh());       // the measured hour is part of the plotted series
+  TEST_ASSERT_TRUE(g.get(84 + 17, 440) <= 4);                // solid rain bar for the measured hour 0
+}
 void test_overnight_rain_labels_only_for_10_percent_or_more() {
   TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
   for (int i = 0; i < d.hourlyCount; i++) d.hourly[i].precipProbPct = 9;
   drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
-  TEST_ASSERT_EQUAL_INT(0, countNot(84, 395, 924, 403, COL_PAPER));        // no labels (and no stray row of "0%")
+  TEST_ASSERT_EQUAL_INT(0, countNot(90, 415, 290, 443, COL_PAPER));        // no labels (between the 12 AM and 6 AM hairlines) (and no stray row of "0%")
   for (int i = 0; i < d.hourlyCount; i++) d.hourly[i].precipProbPct = 100;
   setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
   TEST_ASSERT_TRUE(countNot(84, 393, 924, 400, COL_PAPER) > 150);          // 100 % bars are 48 px tall: labels right above them
@@ -461,6 +506,8 @@ int main() {
   RUN_TEST(test_rain_bars_measured_solid_forecast_outlined);
   RUN_TEST(test_live_chart_x_axis_is_true_time);
   RUN_TEST(test_overnight_top_never_touches);
+  RUN_TEST(test_overnight_chart_true_time_full_day_and_hilo);
+  RUN_TEST(test_overnight_today_mode_uses_measured_hours);
   RUN_TEST(test_overnight_rain_labels_only_for_10_percent_or_more);
   RUN_TEST(test_overnight_header_bar_is_black);
   RUN_TEST(test_charge_me_and_error_screens);

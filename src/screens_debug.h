@@ -7,3 +7,6 @@ void screenTextAnomaliesReset();
 // x pixel of an epoch on the live chart whose "now" (the current reading) is nowT: true time over [now - 6 h, now + 18 h]
 #include <stdint.h>
 int liveChartX(int64_t epoch, int64_t nowT);
+// Rounded high / low labelled on the overnight chart (NAN when none), from the last drawOvernight().
+float screenNightChartHigh();
+float screenNightChartLow();
