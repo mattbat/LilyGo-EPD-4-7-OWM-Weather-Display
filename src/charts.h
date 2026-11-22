@@ -75,6 +75,7 @@ struct LineStyle {
   float dash = 10, gap = 7;
   bool fillArea = false;           // fill between the line and the bottom of the rect
   uint8_t fillGrey = COL_XL;
+  bool strokeLine = true;          // false: only the area fill (lets the caller draw gridlines between fill and line)
 };
 // NAN samples break the line (and area) into separate runs; a lone sample becomes a dot.
 void drawLineSeries(Gfx& g, const float* v, int n, const ChartRect& r, const AxisRange& ax, const LineStyle& st);
@@ -88,7 +89,7 @@ bool drawHiLoMarker(Gfx& g, const float* v, int n, const ChartRect& r, const Axi
                     const EFont& font, int endMargin = 2, int dotRadius = 4, uint8_t grey = COL_K);
 // Horizontal gridlines at multiples of `step` (0 = gridStepFor) with right-aligned axis labels left of the rect.
 void drawGrid(Gfx& g, const ChartRect& r, const AxisRange& ax, const EFont& font, float step = 0,
-              uint8_t lineGrey = COL_XL, uint8_t textGrey = COL_D);
+              uint8_t lineGrey = COL_L, uint8_t textGrey = COL_K);
 // Vertical "now" divider.
 void drawNowLine(Gfx& g, int x, int y0, int y1, int thickness = 2, uint8_t grey = COL_K);
 
@@ -102,8 +103,11 @@ struct BarStyle {
 };
 // Bars that grow up from the bottom of the rect. scaleMax <= 0 auto-scales from the data (with floorMax).
 void drawBars(Gfx& g, const float* v, int n, const ChartRect& r, float scaleMax, const BarStyle& st);
-// Probability bars: 0..100 percent of the rect height (NAN skipped). Draws with minHeight 2.
-void drawProbBars(Gfx& g, const float* pct, int n, const ChartRect& r, uint8_t grey = COL_M, int gap = 4);
+// Probability bars: 0..100 percent of the rect height (NAN skipped). OUTLINED bars (2 px `grey` outline,
+// paper inside) so they differ from the solid measured bars; minimum height 5 px so 1..10 % stays visible.
+void drawProbBars(Gfx& g, const float* pct, int n, const ChartRect& r, uint8_t grey = COL_K, int gap = 4);
+// Paper-coloured knockout rectangle around a text run (pen x, baseline y) so it stays legible over fills and lines.
+void knockoutText(Gfx& g, int x, int y, const char* s, const EFont& font, Align a, int pad = 3, uint8_t bg = COL_PAPER);
 // Small trend line with end dot for a stat tile. Optional area fill (fillGrey < 0 for none), baseline hairline.
 void drawSparkline(Gfx& g, const float* v, int n, const ChartRect& r, int thickness = 3,
                    int fillGrey = -1, bool baseline = true, int dotRadius = 4);

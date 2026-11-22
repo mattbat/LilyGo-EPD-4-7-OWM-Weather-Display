@@ -174,21 +174,6 @@ FetchResult fetchAll(WeatherData& out, FetchContext& ctx) {
   r = getRetry(url, "history", [&](NetReader& in) { return parseDeviceHistory(in, hp.window, out); });
   if (r.status != FETCH_OK) return r;
 
-  // Rain month/year: once per local day, otherwise (or on failure) the cached values.
-  if (ctx.stats) {
-    if (statsNeedFetch(*ctx.stats, ctx.now)) {
-      tempestUrlStats(url, sizeof url, TEMPEST_TOKEN, TEMPEST_STATION_ID);
-      int64_t t = ctx.now;
-      struct tm lt; time_t tt = (time_t)t; localtime_r(&tt, &lt);
-      FetchResult sr = getRetry(url, "stats", [&](NetReader& in) {
-        return parseStats(in, lt.tm_year + 1900, lt.tm_mon + 1, out);
-      });
-      if (sr.status == FETCH_OK) statsStore(*ctx.stats, out, ctx.now);
-      else { Serial.println("stats failed, using cache"); statsApply(*ctx.stats, out); }
-    } else {
-      statsApply(*ctx.stats, out);
-    }
-  }
   out.fetchedEpoch = (uint32_t)ctx.now;
   return makeResult(FETCH_OK, "all");
 }

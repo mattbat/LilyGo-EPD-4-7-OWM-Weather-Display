@@ -35,10 +35,6 @@ int tempestUrlDeviceHistory(char* b, size_t n, const char* t, uint32_t dev, int6
   return snprintf(b, n, TEMPEST_BASE_URL "/observations/device/%lu?time_start=%lld&time_end=%lld&token=%s",
                   (unsigned long)dev, (long long)s, (long long)e, t);
 }
-int tempestUrlStats(char* b, size_t n, const char* t, uint32_t st) {
-  return snprintf(b, n, TEMPEST_BASE_URL "/stats/station/%lu?token=%s", (unsigned long)st, t);
-}
-
 void redactUrl(const char* url, char* out, size_t n) {
   if (!n) return;
   const char* p = strstr(url, "token=");
@@ -66,25 +62,6 @@ HistoryPlan planHistory(int64_t now, TitlesMode titles, float offsetMb) {
   h.window.now = now;
   h.window.pressureOffsetMb = isnan(offsetMb) ? 0.0f : offsetMb;
   return h;
-}
-
-bool statsNeedFetch(const StatsCache& c, int64_t now) { return !c.valid || c.dayKey != localDayKey(now); }
-
-void statsStore(StatsCache& c, const WeatherData& d, int64_t now) {
-  if (!d.rainMonthYearKnown) return;
-  c.valid = true;
-  c.dayKey = localDayKey(now);
-  c.monthIn = d.rainMonthIn;
-  c.yearIn = d.rainYearIn;
-}
-
-bool statsApply(const StatsCache& c, WeatherData& d) {
-  if (!c.valid) return false;
-  d.rainMonthIn = c.monthIn;
-  d.rainYearIn = c.yearIn;
-  d.rainMonthYearKnown = true;
-  d.have |= HAVE_STATS;
-  return true;
 }
 
 void describeFetchResult(const FetchResult& r, char* buf, size_t n) {

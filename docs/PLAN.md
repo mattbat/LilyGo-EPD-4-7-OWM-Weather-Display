@@ -38,38 +38,32 @@ Nothing in the old code needs to be kept. Delete the `.ino`, `forecast_record.h`
 
 All non-secret values above go in `include/config.h`.
 
-## Screen 1: Live (Option C, extended)
+## Screen 1: Live (iteration H3, glanceable)
 
-All coordinates are panel pixels (960 x 540). Copy exact positions and sizes from `optC2()`.
+Big text, nothing smaller than 20 px, no sub-lines. All coordinates are panel pixels (960 x 540); the exact numbers live in `docs/mockups.html` (`gHeader`, `hTop`, `hChart`, `label`, `optH3`, `alertBand`/`optH4`).
 
-| Region | y range | Content |
-|---|---|---|
-| Header | 0-48 | Location label (left, 18 px bold, letter-spaced). Right: `Sat, Nov 21 · Updated 2:00 PM` = date and the time the data was fetched. Battery icon far right. 2 px rule at y 48. |
-| Current | 52-236 | Condition icon. Big temperature (~136 px bold). Condition text and feels-like. 2x2 stat grid (Wind + gusts/dir, Rain today + rate or yesterday, Humidity + dew point, Pressure + trend arrow). **Smart slot**: black rounded box at x 798-936 with inverted text. 2 px rule at y 242. |
-| Chart | 254-470 | 48 h chart. Left half: measured temp (solid 4 px line, light-grey area fill). Right half: forecast temp (dashed line) on a slightly darker background. Black "now" line and dot. Labelled high/low points (skip points at the very ends). Temp axis auto-scales to the 48 h min/max rounded to 5°. |
-| Rain band | under chart, 40 px | Measured hourly rain as black bars (auto-scaled to the max hour, minimum 0.05 in). Forecast precip probability as grey bars (0-100%). Short notes at top-left and top-right. |
-| Lightning row | under rain band | Small bolt with the strike count centered under it, for each hour that had strikes. If none: "no lightning in 24 h" in grey. |
-| Time axis | y ~494 | Labels every 6 h, "NOW" bold in the middle. |
-| Info line | 504-540 | 2 px rule, then one centered line: sunrise, sunset, UV, rain this month, rain this year, station battery. |
+- **Header** (rule at y 50): location label (bold 20, letter-spaced) left; right only the update time (`2:00 PM`, 24 px) and the device battery icon.
+- **Top** (rule at y 316): condition icon, temperature 170 px bold (shrinks for negative / 3-digit values), condition 34 px bold under it (shrinks, then ends in "..."). Right: three rows Wind (mph), Rain today (in), Humidity (%), 28 px labels, 56 px bold values, 28 px units, hairline dividers.
+- **Chart** (y 318-540): last 6 hourly history buckets (measured, solid 5 px line) then the next 18 forecast hours (dashed 5 px `14 10`), black "now" line and 10 px dot at the current temperature, faint vertical hairlines every 3 h, forecast temperature printed on the line every 3 h (bold 24, paper knockout, 5 px dot). Rain bars on a baseline at y 488: solid = measured rain per hour (auto-scaled, 0.05 in floor), outlined 2 px = forecast precipitation probability. The x axis is true time over [now - 6 h, now + 18 h] (now = fetch time); time labels at local hours divisible by 3 at y 522 (22 px), "NOW" bold under the now line. The note `Rain, last 6 h: 0.21 in` (22 px, top-left at y 344) appears only when the measured rain in that window is at least 0.005 in.
+- **Alert band**: when something needs attention a full-width black band replaces the chart area (y 318-540): large white icon, 46 px bold white headline, 28 px white sub line. First match wins (`alert.h`):
+  1. Lightning strikes in the last 3 h: `28 lightning strikes` / `in the last 3 hours · nearest 3 mi`.
+  2. Raining now (rate > 0): `Raining 0.24 in/hr` / `0.65 in so far today`.
+  3. UV >= 6: `UV 8 · very high` / `limit time in the sun`.
+  Otherwise no band. The alert band replaced the old smart slot; the "next rain" state is gone (the forecast bars show it).
+- **Offline**: the header time becomes a black rounded chip `OFFLINE · 1:30 PM` (white text, time of the last good data). If there is no good data at all, the error screen is drawn with the reason (WiFi failed / Tempest API error + HTTP code) and the time.
+- Missing values draw as `--`, never "nan".
 
-**Smart slot priority** (first match wins):
-1. Lightning strikes in the last 3 h > 0: label "LIGHTNING", bolt icon, strike count, "strikes · 3 h", "nearest N mi".
-2. Raining now (rain rate > 0): label "RAINING", rate in in/hr.
-3. UV ≥ 6: label "UV", value, "high" / "very high" / "extreme".
-4. Otherwise: label "NEXT RAIN", day name, hour, and % chance of the first forecast hour with precip probability ≥ 40% within 72 h. If none, show "No rain in 3 days".
+## Screen 2: Overnight summary (option N3)
 
-**Offline state.** If any fetch fails, draw the live screen from the last good data and replace the header's right-hand text with a black chip: `OFFLINE · last data 1:30 PM`. If there is no good data at all, draw a simple error screen with the reason (WiFi failed / Tempest API error + HTTP code) and the time.
+Drawn by the 10:00 PM wake, then the board sleeps until 5:00 AM. It must not look live. Exact numbers in `docs/mockups.html` (`nightHeader`, `nightFooter`, `optN3`).
 
-## Screen 2: Overnight summary
+- **Black header bar** (0-64): location label (bold 22, letter-spaced), moon, `Paused until 5 AM` (bold 24), all white.
+- **TODAY row** (left, x 28-440): High / Low / Rain, 22 px labels over 50 px bold values. Vertical rule at x 452.
+- **TOMORROW · <DAY>** (right): icon, high 76 px bold, `/ low` 44 px, condition 28 px bold right-aligned. Rule at y 212.
+- **Chart** (the target day, 12 AM to 12 AM, true-time axis): dashed 4 px temperature line, hairline degree gridlines with 20 px labels, BOTH the high and the low labelled (bold 28, paper knockout, 6 px dot; taken from the plotted hourly data, so they can differ from the daily numbers in the header), outlined precipitation-probability bars with the percentage (bold 20) above each bar of 10 % or more, "rain" axis label, time labels and hairlines every 6 h (22 px, y 482). In TODAY mode hours already past use measured history (solid line, solid rain bars), the rest the forecast, joined at the last measured hour.
+- **Footer** (rule at y 500): centred 22 px `Sunrise 6:59 AM · Last data 10:00 PM`.
 
-Drawn by the 10:00 PM wake, then the board sleeps until 5:00 AM. It must not look live. Copy from `optNight()`.
-
-- **Black header bar** (0-56) with white text: location label, moon icon, `Paused overnight · next update 5:00 AM`.
-- **Left column, "TODAY · SAT NOV 21":** rows for High (with time), Low (with time), Rain, Peak gust (with time), Lightning (count or "none"), "At 10 PM" last reading. Below: small area sparkline of today's temperature, midnight to now.
-- **Right column, "TOMORROW · SUN NOV 22":** forecast icon, high / low, condition text, rain chance and gust note. Dashed hourly temperature line 5 AM-10 PM with the peak labelled, and rain-chance bars under it.
-- **Bottom line:** `Last data 10:00 PM`, sunrise, rain this month and year, station battery.
-
-If the user presses reset during quiet hours (after midnight), fetch fresh data and draw this screen with the left column titled "YESTERDAY · <date>" and the right column titled "TODAY · <date>". Then sleep until 5:00 AM.
+If the user presses reset during quiet hours (after midnight), fetch fresh data and draw this screen with the left row titled "YESTERDAY" and the right titled "TODAY · <DAY>" (the chart then covers today, 12 AM-12 AM). Then sleep until 5:00 AM.
 
 ## Screen 3: Charge me
 
@@ -85,7 +79,6 @@ Base URL `https://swd.weatherflow.com/swd/rest`, auth with `?token=<personal acc
 | `GET /observations/station/ID` | Lightning count last 3 h (`lightning_strike_count_last_3hr`), last strike distance (`lightning_strike_last_distance`), rain yesterday (`precip_accum_local_yesterday`), rain rate (`precip` last minute ×60, or `precip_accum_last_1hr`; check which behaves well on real data) |
 | `GET /observations/device/DEVICE_ID?time_start=T-24h&time_end=now` | Last 24 h history for the chart and the overnight summary. `obs` is an array of arrays; `obs_st` field order: 0 epoch, 2 wind avg m/s, 3 gust m/s, 4 dir, 6 pressure mb, 7 temp C, 8 RH, 10 UV, 11 solar W/m², 12 rain mm in interval, 15 lightning count, 16 battery V |
 | `GET /stations` | Look up the device ID once if `TEMPEST_DEVICE_ID` is 0 (the device with `device_type` "ST"). Cache it in NVS. |
-| `GET /stats/station/ID` (unverified) | Rain this month and this year. If it doesn't work with a personal token, sum daily rain from history each day and keep month/year totals in NVS. |
 
 Notes for the implementer:
 - History is metric regardless of unit params: convert in `units.cpp`.
@@ -155,7 +148,7 @@ src/
   fonts/              // generated GFXfont headers (UNcompressed, see Fonts)
   icons.h/.cpp        // portable: sun, cloud, partly cloudy, rain, snow, storm, fog, moon, bolt, battery
   charts.h/.cpp       // portable: line + area, dashed line, bars, sparkline, axis labels, hi/lo marks
-  smart_slot.h/.cpp   // portable: pick the smart slot content from WeatherData
+  alert.h/.cpp        // portable: pick the live-screen alert band (lightning > raining > UV) from WeatherData
   screens.h/.cpp      // portable: drawLive(), drawOvernight(), drawChargeMe(), drawError()
   display_hw.cpp      // ESP32 only: epd_init, epd_poweron, epd_clear, epd_draw_grayscale_image, poweroff
   battery.cpp         // ESP32 only: ADC read -> volts and percent
@@ -163,19 +156,19 @@ tools/native/
   main_native.cpp     // loads test/fixtures, renders every screen to out/*.png (stb_image_write)
 test/fixtures/
   station_obs.json, better_forecast.json, device_history.json   // real captured responses
-  storm/*.json, raining/*.json                                  // hand-edited copies for other smart slot states
+  storm/*.json, raining/*.json                                  // hand-edited copies for the alert band states
 ```
 
 ## Fonts
 
 - Font: **Atkinson Hyperlegible** (OFL), regular + bold, from Google Fonts. Download the TTFs into `tools/fonts/`.
 - Generate with LilyGo's `fontconvert.py` (in the LilyGo-EPD47 repo, `scripts/`) **without compression**, so the portable renderer can read the 4-bit glyph bitmaps directly. Flash is 16 MB, so size is not a concern.
-- Sizes used across the three screens: regular 13, 14, 15, 16, 17, 18, 20, 22, 44; bold 13, 14, 15, 17, 18, 19, 20, 22, 32, 42, 50, 76, 84, 136. For 84 and 136 include only digits, degree sign, minus and slash. Merge sizes that look identical on the panel to save build time.
+- Sizes used across the screens (nothing below 20 px): regular 20, 22, 24, 28, 44; bold 20, 22, 24, 28, 34, 46, 50, 56, 76, 136, 170. For 136 and 170 include only digits, degree sign, minus, dot and slash. Edit the list in `tools/fonts/gen_fonts.py` and rerun it; delete sizes that are no longer used.
 - Include the degree sign (U+00B0), middle dot (U+00B7), and arrows (U+2191, U+2193) in the character ranges.
 
 ## Testing and CI (required for every task)
 
-- **Every portable module gets Unity tests** under `test/` run by `pio test -e native`: gfx (pixel/line/rect/text bounds checked against framebuffer contents), fonts (glyph lookup, text width), units, parse (all fixtures), history bucketing and day summary, smart slot (each priority case), schedule (every wake case, DST days, midnight), charts (scaling and auto-range math), screens (render each screen from fixtures without crashing, plus golden-image checksums or pixel spot checks for key regions). A task is not done until its tests exist and pass.
+- **Every portable module gets Unity tests** under `test/` run by `pio test -e native`: gfx (pixel/line/rect/text bounds checked against framebuffer contents), fonts (glyph lookup, text width), units, parse (all fixtures), history bucketing and day summary, alert picker (each trigger, priority, thresholds), schedule (every wake case, DST days, midnight), charts (scaling and auto-range math), screens (render each screen from fixtures without crashing, plus golden-image checksums or pixel spot checks for key regions). A task is not done until its tests exist and pass.
 - ESP32-only modules (`tempest_api`, `display_hw`, `battery`, `main`) keep their logic thin: anything testable (URL building, voltage-to-percent, retry decisions) lives in a portable helper with tests.
 - **GitHub Actions** (`.github/workflows/ci.yml`, added in task 1): on every push and PR, copy `secrets.example.h` to `secrets.h`, run `pio test -e native`, build `native` and upload the screen preview PNGs as an artifact, build `t5-47` and upload `firmware.bin`.
 - **Release** (`.github/workflows/release.yml`): on a `v*` tag, build `t5-47` and attach the binaries to a GitHub Release. These binaries hold placeholder settings; the real device is flashed from a local build with the real `secrets.h`.
@@ -188,7 +181,7 @@ Run in this order. Tasks 2, 3 and 4 can run in parallel once task 1 is merged. E
 2. **Graphics core + fonts.** `gfx.cpp` primitives with clipping, thick lines (2-8 px), dashed lines, rounded rects, polygon fill, text measure/draw with LEFT/CENTER/RIGHT alignment and letter-spacing. Generate fonts. Native program writes a test-card PNG. Done when the test card shows every primitive and font size correctly.
 3. **Data layer.** Capture fixtures with curl using the user's secrets, write `weather_data.h`, `units.cpp`, `parse.cpp` (portable), history bucketing and the day summary (high/low/peak gust with times, rain, strikes). Check the stats endpoint. Done when `pio test -e native` parses all fixtures into the expected values.
 4. **Icons + charts.** Portable icon set matching the mockup style (outline icons, 3 px strokes, moon, bolt, battery) and chart helpers. Done when a native gallery PNG shows each one.
-5. **Screens.** Implement `drawLive()`, `drawOvernight()`, `drawChargeMe()`, `drawError()` and the offline chip, plus `smart_slot.cpp` as a pure function with a unit test for each priority case. Add the storm and raining fixtures. Compare the PNGs against `docs/mockups.html` side by side. Done when the previews match the mockups and handle edge cases: negative temps, 3-digit temps, no rain, no lightning, missing history, long condition text.
+5. **Screens.** Implement `drawLive()`, `drawOvernight()`, `drawChargeMe()`, `drawError()` and the offline chip, plus `alert.cpp` (formerly the smart slot) as a pure function with a unit test for each priority case. Add the storm and raining fixtures. Compare the PNGs against `docs/mockups.html` side by side. Done when the previews match the mockups and handle edge cases: negative temps, 3-digit temps, no rain, no lightning, missing history, long condition text.
 6. **Device integration.** `tempest_api.cpp`, `display_hw.cpp`, `battery.cpp`, `schedule.cpp` (with unit tests for every case in "Device flow" step 3, including DST change days), `main.cpp`, RTC-memory last-good cache, charge-me mode. Done when the board shows live station data, draws the overnight screen at 10 PM, and survives a WiFi failure.
 7. **Flash + tune.** With the board on USB: `pio run -e t5-47 -t upload`, then `pio device monitor`. Check legibility at real size, adjust font sizes and greys, measure awake time, and update the battery estimate.
 
@@ -208,3 +201,5 @@ Tasks 1-6 are merged. The firmware runs on the board: WiFi, all Tempest calls, r
 - [ ] **Calibrate the battery reading.** The board reports 4.87 V, above an 18650's 4.2 V maximum. Confirm whether the battery was connected, compare with a multimeter, and fix the divider factor in battery.cpp (and the Charge me thresholds if needed).
 - [ ] Confirm GitHub CI passes on Linux, especially the golden checksums in test/test_screens.
 - [ ] Measure deep-sleep current if possible, and update the battery-life estimate.
+
+- [x] Removed the daily `/stats/station` download (rain this month/year). No screen shows those totals any more, so it only cost ~4.5 s of WiFi per day.

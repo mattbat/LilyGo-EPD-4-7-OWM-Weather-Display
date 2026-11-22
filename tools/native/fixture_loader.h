@@ -39,7 +39,7 @@ inline bool fixtureRead(const char* variant, const char* file, std::string& out)
   return false;
 }
 
-// Loads forecast + station obs + history + stats. `history` = false skips the history parse entirely
+// Loads forecast + station obs + history. `history` = false skips the history parse entirely
 // (HAVE_HISTORY stays unset, like a failed device-history request). Returns false if a required file is missing.
 inline bool loadFixtureSet(const char* variant, WeatherData& d, bool history = true) {
   std::string j;
@@ -50,7 +50,6 @@ inline bool loadFixtureSet(const char* variant, WeatherData& d, bool history = t
     HistoryWindow w{FIXTURE_NOW, FIXTURE_DAY_START, FIXTURE_DAY_START + 86400, 0.0f};
     if (!fixtureRead(variant, "device_history.json", j) || parseDeviceHistory(j.c_str(), j.size(), w, d) != PARSE_OK) return false;
   }
-  if (!fixtureRead(variant, "stats.json", j) || parseStats(j.c_str(), j.size(), 2026, 11, d) != PARSE_OK) return false;
   d.fetchedEpoch = (uint32_t)FIXTURE_NOW;
   return true;
 }

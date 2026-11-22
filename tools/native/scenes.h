@@ -8,7 +8,7 @@
 struct SceneDef { const char* name; };   // PNG is out/<name>.png
 static const SceneDef kScenes[] = {
   {"live_real"}, {"live_storm"}, {"live_raining"}, {"live_cold"}, {"live_hot"}, {"live_offline"},
-  {"live_nohistory"}, {"overnight_today"}, {"overnight_yesterday"}, {"overnight_cold"}, {"overnight_hot"},
+  {"live_nohistory"}, {"live_rain6h"}, {"overnight_today"}, {"overnight_yesterday"}, {"overnight_cold"}, {"overnight_hot"},
   {"charge_me"}, {"error"}};
 static const int kSceneCount = (int)(sizeof kScenes / sizeof kScenes[0]);
 
@@ -47,6 +47,12 @@ inline bool renderScene(const char* name, Gfx& g) {
     st.nowEpoch = FIXTURE_NOW + 3 * 1800; st.offline = true; drawLive(g, d, st);
   }
   else if (!strcmp(name, "live_nohistory")) { if (!loadFixtureSet("nohistory", d)) return false; drawLive(g, d, st); }
+  else if (!strcmp(name, "live_rain6h")) {       // dry now, but it rained during the last six hours (rain note + bars)
+    if (!loadFixtureSet(nullptr, d)) return false;
+    static const float mm[] = {0.02f, 0.06f, 0.08f, 0.03f, 0.02f};
+    for (int i = 0; i < 5; i++) { d.hist[19 + i].valid = true; d.hist[19 + i].rainIn = mm[i]; }
+    drawLive(g, d, st);
+  }
   else if (!strcmp(name, "overnight_today")) {
     if (!loadFixtureSet(nullptr, d)) return false;
     st.nowEpoch = NIGHT; drawOvernight(g, d, st, TITLES_TODAY_TOMORROW);

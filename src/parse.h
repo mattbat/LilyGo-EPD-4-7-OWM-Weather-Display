@@ -57,12 +57,9 @@ const char* iconKeyName(IconKey k);
 
 void makeForecastFilter(JsonDocument& f);
 void makeStationObsFilter(JsonDocument& f);
-void makeStatsFilter(JsonDocument& f);
 void makeStationsFilter(JsonDocument& f);
 ParseStatus applyBetterForecast(JsonVariantConst root, WeatherData& out);
 ParseStatus applyStationObs(JsonVariantConst root, WeatherData& out);
-// year/month = local date required in the newest row (0 = no check).
-ParseStatus applyStats(JsonVariantConst root, int year, int month, WeatherData& out);
 // stationId 0 = first station. Fills deviceId with the "ST" device.
 ParseStatus applyStations(JsonVariantConst root, uint32_t stationId, uint32_t& deviceId);
 
@@ -91,18 +88,6 @@ template <class In> ParseStatus parseStationObs(In& in, WeatherData& out) {
 }
 inline ParseStatus parseStationObs(const char* j, size_t n, WeatherData& out) {
   MemReader r(j, n); return parseStationObs(r, out);
-}
-
-// ---- /stats/station/ID: rain this month / year -----------------------------
-// The response is large (stats_day alone is ~250 KB for a 3 year old station); it is
-// skimmed through the filter, only stats_month and stats_year are kept (~10 KB).
-template <class In> ParseStatus parseStats(In& in, int year, int month, WeatherData& out) {
-  JsonDocument doc;
-  ParseStatus s = parseJsonFiltered(in, makeStatsFilter, doc);
-  return s != PARSE_OK ? s : applyStats(doc.as<JsonVariantConst>(), year, month, out);
-}
-inline ParseStatus parseStats(const char* j, size_t n, int year, int month, WeatherData& out) {
-  MemReader r(j, n); return parseStats(r, year, month, out);
 }
 
 // ---- /stations: find the ST device id ---------------------------------------

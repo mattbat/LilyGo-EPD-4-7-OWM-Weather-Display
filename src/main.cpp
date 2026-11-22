@@ -20,7 +20,6 @@ struct RtcState {
   uint32_t magic;
   bool chargeMeMode, chargeMeShown;
   bool cacheValid;            // g_cache holds the last good fetch
-  StatsCache stats;           // rain month/year, refreshed once per local day
 };
 static const uint32_t RTC_MAGIC = 0x54454D50;   // "TEMP"
 RTC_DATA_ATTR static RtcState g_rtc;
@@ -126,7 +125,7 @@ void setup() {
   fr.status = FETCH_ERR_WIFI; fr.httpCode = 0; fr.parse = PARSE_OK; snprintf(fr.what, sizeof fr.what, "wifi");
   bool fresh = false;
   if (wifi) {
-    FetchContext ctx{now, plan.titles, &g_rtc.stats};
+    FetchContext ctx{now, plan.titles};
     fr = fetchAll(g_work, ctx);
     fresh = fr.status == FETCH_OK;
   }

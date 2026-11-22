@@ -72,8 +72,6 @@ void test_url_builders() {
   tempestUrlDeviceHistory(u, sizeof u, "TOK", 249992, 1795200000LL, 1795313256LL);
   TEST_ASSERT_EQUAL_STRING("https://swd.weatherflow.com/swd/rest/observations/device/249992?time_start=1795200000"
                            "&time_end=1795313256&token=TOK", u);
-  tempestUrlStats(u, sizeof u, "TOK", 12345);
-  TEST_ASSERT_EQUAL_STRING("https://swd.weatherflow.com/swd/rest/stats/station/12345?token=TOK", u);
 }
 void test_url_truncation_reported() {
   char u[20];
@@ -153,50 +151,6 @@ void test_pressure_offset_from_station_obs() {
   TEST_ASSERT_TRUE(wd.pressureOffsetMb > 20.0f && wd.pressureOffsetMb < 60.0f);
 }
 
-// ---- stats once per local day
-void test_stats_once_per_day() {
-  StatsCache c; memset(&c, 0, sizeof c);
-  int64_t morning = L(2026, 11, 21, 5, 0), night = L(2026, 11, 21, 21, 30), next = L(2026, 11, 22, 5, 0);
-  TEST_ASSERT_TRUE(statsNeedFetch(c, morning));            // never fetched
-  static WeatherData wd; weatherDataInit(wd);
-  wd.rainMonthYearKnown = true; wd.rainMonthIn = 1.5f; wd.rainYearIn = 30.25f;
-  statsStore(c, wd, morning);
-  TEST_ASSERT_TRUE(c.valid);
-  TEST_ASSERT_FALSE(statsNeedFetch(c, morning + 1800));
-  TEST_ASSERT_FALSE(statsNeedFetch(c, night));              // same local day
-  TEST_ASSERT_TRUE(statsNeedFetch(c, next));                // new local day
-}
-void test_stats_day_boundary_is_local_midnight() {
-  StatsCache c; memset(&c, 0, sizeof c);
-  static WeatherData wd; weatherDataInit(wd);
-  wd.rainMonthYearKnown = true; wd.rainMonthIn = 1; wd.rainYearIn = 2;
-  statsStore(c, wd, L(2026, 11, 21, 23, 59, 59));
-  TEST_ASSERT_FALSE(statsNeedFetch(c, L(2026, 11, 21, 23, 59, 59)));
-  TEST_ASSERT_TRUE(statsNeedFetch(c, L(2026, 11, 22, 0, 0, 1)));
-}
-void test_stats_cache_fallback() {
-  StatsCache c; memset(&c, 0, sizeof c);
-  static WeatherData wd; weatherDataInit(wd);
-  TEST_ASSERT_FALSE(statsApply(c, wd));                     // nothing cached
-  TEST_ASSERT_FALSE(wd.rainMonthYearKnown);
-  // a parse that did not know the values does not poison the cache
-  statsStore(c, wd, L(2026, 11, 21, 5, 0));
-  TEST_ASSERT_FALSE(c.valid);
-  // real fetch from the fixture, then fall back later
-  std::string j = load("stats.json");
-  static WeatherData fresh; weatherDataInit(fresh);
-  ParseStatus ps = parseStats(j.c_str(), j.size(), 0, 0, fresh);
-  TEST_ASSERT_EQUAL(PARSE_OK, ps);
-  statsStore(c, fresh, L(2026, 11, 21, 5, 0));
-  TEST_ASSERT_TRUE(c.valid);
-  weatherDataInit(wd);
-  TEST_ASSERT_TRUE(statsApply(c, wd));
-  TEST_ASSERT_TRUE(wd.rainMonthYearKnown);
-  TEST_ASSERT_EQUAL_FLOAT(fresh.rainMonthIn, wd.rainMonthIn);
-  TEST_ASSERT_EQUAL_FLOAT(fresh.rainYearIn, wd.rainYearIn);
-  TEST_ASSERT_TRUE(wd.have & HAVE_STATS);
-}
-
 // ---- fetch result text and retry policy
 void test_fetch_result_text_and_retry() {
   FetchResult r; memset(&r, 0, sizeof r);
@@ -232,9 +186,6 @@ int main() {
   RUN_TEST(test_history_plan_dst_day_windows);
   RUN_TEST(test_history_plan_feeds_the_parser_on_fixture);
   RUN_TEST(test_pressure_offset_from_station_obs);
-  RUN_TEST(test_stats_once_per_day);
-  RUN_TEST(test_stats_day_boundary_is_local_midnight);
-  RUN_TEST(test_stats_cache_fallback);
   RUN_TEST(test_fetch_result_text_and_retry);
   return UNITY_END();
 }

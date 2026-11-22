@@ -18,7 +18,6 @@ int tempestUrlStationObs(char* buf, size_t n, const char* token, uint32_t statio
 int tempestUrlStations(char* buf, size_t n, const char* token);
 int tempestUrlDeviceHistory(char* buf, size_t n, const char* token, uint32_t deviceId, int64_t timeStart,
                             int64_t timeEnd);
-int tempestUrlStats(char* buf, size_t n, const char* token, uint32_t stationId);
 // Copy of url with the token value replaced by "REDACTED" (safe to log).
 void redactUrl(const char* url, char* out, size_t n);
 
@@ -31,16 +30,6 @@ struct HistoryPlan {
 // yesterday and the request reaches back to yesterday's midnight (~30 h at most, 24 h min).
 // pressureOffsetMb may be NAN (treated as 0).
 HistoryPlan planHistory(int64_t now, TitlesMode titles, float pressureOffsetMb);
-
-// ---- Stats (rain this month / year), fetched at most once per local day ----
-struct StatsCache {
-  bool valid;
-  int32_t dayKey;        // local yyyymmdd of the successful fetch
-  float monthIn, yearIn;
-};
-bool statsNeedFetch(const StatsCache& c, int64_t now);
-void statsStore(StatsCache& c, const WeatherData& d, int64_t now);   // after a successful parse
-bool statsApply(const StatsCache& c, WeatherData& d);                // fallback to cached values
 
 // ---- Fetch results (shared by tempest_api.cpp and the error screen text) ----
 enum FetchStatus {

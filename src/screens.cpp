@@ -1,9 +1,11 @@
 // Portable screens: Live, Overnight summary, Charge me, Error.
-// Pixel positions, font sizes, weights, greys and strokes are copied from docs/mockups.html
-// (optC2 = live, optNight = overnight, optCharge = charge me). SVG letter-spacing of 1.5 is drawn as 2.
+// Pixel positions, font sizes, weights and strokes are copied from docs/mockups.html:
+//   live      = iteration H3 (gHeader, hTop, hChart, label, optH3) and the alert band (alertBand, optH4)
+//   overnight = option N3 (nightHeader, nightFooter, optN3)
+// Large text only: nothing is drawn below 20 px.
 #include "screens.h"
 #include "screens_debug.h"
-#include "smart_slot.h"
+#include "alert.h"
 #include "charts.h"
 #include "icons.h"
 #include "units.h"
@@ -17,13 +19,14 @@
 
 #define MID_DOT "\xC2\xB7"
 #define SEP     "  \xC2\xB7  "
-#define COL_SLOT_SUB 12   // #cfcfca on the black slot
 
 // ---------------------------------------------------------------------------------------------
 // Text layer: every string goes through here. A "nan"/"inf" token never reaches the framebuffer.
 // ---------------------------------------------------------------------------------------------
 namespace {
 int g_anomalies = 0;
+float g_nightHi = NAN, g_nightLo = NAN;   // labelled high / low of the overnight chart (test hook)
+float tC_lo(const float* v) { float lo = 1e9f; for (int i = 0; i < 25; i++) if (isfinite(v[i]) && v[i] < lo) lo = v[i]; return lo; }
 char g_lastAnomaly[64] = "";
 
 bool hasBadToken(const char* s) {
@@ -105,13 +108,6 @@ void trimCopy(char* dst, size_t n, const char* src) {
 // ---- small drawing helpers ----
 void rule(Gfx& g, int y, int thickness = 2) { g.fillRect(24, y - 1, 912, thickness, COL_K); }
 
-int64_t localMidnight(int64_t epoch) {
-  struct tm t;
-  if (!localTm(epoch, &t)) return epoch - epoch % 86400;
-  t.tm_hour = 0; t.tm_min = 0; t.tm_sec = 0; t.tm_isdst = -1;
-  return (int64_t)mktime(&t);
-}
-
 int64_t pickNow(const WeatherData& d, const ScreenStatus& st) {
   if (st.nowEpoch > 0) return st.nowEpoch;
   if (st.lastGoodEpoch > 0) return st.lastGoodEpoch;
@@ -124,469 +120,440 @@ int64_t pickDataEpoch(const WeatherData& d, const ScreenStatus& st, int64_t now)
   return now;
 }
 
-void drawHeaderLabel(Gfx& g, int x, int y, uint8_t grey) { txt(g, x, y, LOCATION_LABEL, AtkB18, grey, ALIGN_LEFT, 2); }
+void drawHeaderLabel(Gfx& g, int x, int y, uint8_t grey, const EFont& f = AtkB20) {
+  txt(g, x, y, LOCATION_LABEL, f, grey, ALIGN_LEFT, 2);
+}
 
-// "UV 3  ·  ..." style joiner: appends `item` to `line` with the separator when both are non-empty.
+// Appends `item` to `line` with the separator when both are non-empty.
 void addItem(char* line, size_t n, const char* item) {
   if (!item || !*item) return;
   if (line[0]) strncat(line, SEP, n - strlen(line) - 1);
   strncat(line, item, n - strlen(line) - 1);
 }
 
-void stationBatteryText(char* b, size_t n, float v) {
-  b[0] = 0;
-  if (!isfinite(v)) return;
-  if (v >= STATION_BATT_OK_V) snprintf(b, n, "Station battery OK");
-  else snprintf(b, n, "Station battery LOW %.2f V", v);
-}
-
-// Rain month / year ("Rain Nov 2.41 in  ·  2026 31.6 in"), empty when unknown.
-void rainTotalsText(char* b, size_t n, const WeatherData& d, int64_t now) {
-  b[0] = 0;
-  if (!d.rainMonthYearKnown) return;
-  struct tm t;
-  if (!localTm(now, &t)) return;
-  char m[32] = "", y[32] = "";
-  if (isfinite(d.rainMonthIn)) snprintf(m, sizeof m, "Rain %s %.2f in", monName(t.tm_mon), d.rainMonthIn);
-  if (isfinite(d.rainYearIn)) snprintf(y, sizeof y, "%d %.1f in", t.tm_year + 1900, d.rainYearIn);
-  addItem(b, n, m);
-  addItem(b, n, y);
-}
-
-// One centred info line, shrinking the font until it fits 912 px.
-void drawInfoLine(Gfx& g, int baseline, const char* line) {
-  static const EFont* const fonts[] = {&AtkR17, &AtkR16, &AtkR15, &AtkR14};
-  txtFit(g, 480, baseline, line, fonts, 4, 912, COL_K, ALIGN_CENTER);
+// Right-aligned "value unit" (big bold value, regular unit). The value shrinks through `fonts` to fit maxW.
+void drawValueUnit(Gfx& g, int right, int baseline, const char* value, const char* unit, const EFont* const* fonts,
+                   int nf, const EFont& unitFont, int gap, int maxW) {
+  bool dash = isDash(value);
+  int uw = (!dash && unit && *unit) ? tw(unitFont, unit) + gap : 0;
+  const EFont& f = fitFont(value, fonts, nf, maxW - uw);
+  if (uw) txt(g, right, baseline, unit, unitFont, COL_K, ALIGN_RIGHT);
+  txt(g, right - uw, baseline, value, f, COL_K, ALIGN_RIGHT);
 }
 
 // ---------------------------------------------------------------------------------------------
-// Smart slot
+// Live screen (H3)
 // ---------------------------------------------------------------------------------------------
-void drawSlot(Gfx& g, const SmartSlot& s) {
-  const int sx = 798, sy = 60, sw = 138, sh = 172;
-  g.fillRoundRect(sx, sy, sw, sh, 8, COL_K);
-  txt(g, sx + sw / 2, sy + 26, s.label, AtkB14, COL_PAPER, ALIGN_CENTER, 2);
-
-  // Big text: next to the icon if it fits, else centred without the icon.
-  static const EFont* const withIcon[] = {&AtkB50, &AtkB42};
-  static const EFont* const alone[] = {&AtkB50, &AtkB42, &AtkB32, &AtkB22};
-  const int iconW = 76;
-  bool useIcon = s.icon != SlotIcon::None;
-  const EFont* bigFont = nullptr;
-  if (useIcon) {
-    for (const EFont* f : withIcon) if (tw(*f, s.big) <= iconW) { bigFont = f; break; }
-    if (!bigFont) useIcon = false;
-  }
-  if (useIcon) {
-    switch (s.icon) {
-      case SlotIcon::Bolt: drawBolt(g, sx + 30, sy + 76, 2.4f, COL_PAPER); break;
-      case SlotIcon::Rain:
-        for (int i = 0; i < 3; i++) g.line(sx + 22 + i * 12, sy + 62, sx + 16 + i * 12, sy + 84, 3, COL_PAPER);
-        break;
-      case SlotIcon::Sun: drawSun(g, sx + 32, sy + 74, 10, 3, COL_K, COL_PAPER); break;
-      default: break;
-    }
-    txt(g, sx + 54, sy + 94, s.big, *bigFont, COL_PAPER);
-  } else {
-    txtFit(g, sx + sw / 2, sy + 94, s.big, alone, 4, sw - 16, COL_PAPER, ALIGN_CENTER);
-  }
-  static const EFont* const sub1F[] = {&AtkB17, &AtkB15, &AtkB14};
-  static const EFont* const sub2F[] = {&AtkR16, &AtkR15, &AtkR14};
-  txtFit(g, sx + sw / 2, sy + 132, s.sub1, sub1F, 3, sw - 12, COL_PAPER, ALIGN_CENTER);
-  txtFit(g, sx + sw / 2, sy + 156, s.sub2, sub2F, 3, sw - 12, COL_SLOT_SUB, ALIGN_CENTER);
-}
-
-// ---------------------------------------------------------------------------------------------
-// Live screen pieces
-// ---------------------------------------------------------------------------------------------
-void drawLiveHeader(Gfx& g, const ScreenStatus& st, int64_t now, int64_t dataEpoch) {
-  drawHeaderLabel(g, 28, 34, COL_K);
+void drawLiveHeader(Gfx& g, const ScreenStatus& st, int64_t dataEpoch) {
+  drawHeaderLabel(g, 24, 34, COL_K);
   bool batt = st.batteryPercent >= 0;
-  int right = batt ? 876 : 936;
-  char clock[16], date[24], line[80];
+  int right = batt ? 882 : 936;
+  char clock[16];
+  fmtClock(clock, sizeof clock, dataEpoch);
   if (st.offline) {
-    fmtClock(clock, sizeof clock, dataEpoch);
-    snprintf(line, sizeof line, "OFFLINE " MID_DOT " last data %s", clock);
-    int w = tw(AtkB17, line);
-    int x1 = right, x0 = right - w - 24;
-    g.fillRoundRect(x0, 9, x1 - x0, 32, 6, COL_K);
-    txt(g, x0 + 12, 31, line, AtkB17, COL_PAPER);
+    // black rounded chip "OFFLINE · 1:30 PM" (the time of the last good data)
+    char line[48];
+    snprintf(line, sizeof line, "OFFLINE " MID_DOT " %s", clock);
+    int w = tw(AtkB24, line);
+    int x0 = right - w - 28;
+    g.fillRoundRect(x0, 8, right - x0, 38, 10, COL_K);
+    txt(g, x0 + 14, 35, line, AtkB24, COL_PAPER);
   } else {
-    fmtDate(date, sizeof date, now);
-    fmtClock(clock, sizeof clock, dataEpoch);
-    snprintf(line, sizeof line, "%s " MID_DOT " Updated %s", date, clock);
-    txt(g, right, 34, line, AtkR22, COL_D, ALIGN_RIGHT);
+    txt(g, right, 34, clock, AtkR24, COL_K, ALIGN_RIGHT);
   }
   if (batt) drawBattery(g, 894, 19, st.batteryPercent);
-  rule(g, 48);
+  rule(g, 50);
 }
 
-void drawStat(Gfx& g, int x, int y, const char* label, const char* value, const char* unit, const char* sub) {
-  txt(g, x, y + 15, label, AtkB14, COL_D, ALIGN_LEFT, 2);
-  int w = txt(g, x, y + 56, value, AtkB42, COL_K);
-  if (!isDash(value) && unit && *unit) txt(g, x + w + 4, y + 56, unit, AtkR18, COL_K);
-  static const EFont* const subF[] = {&AtkR16, &AtkR15, &AtkR14};
-  txtFit(g, x, y + 79, sub, subF, 3, 148, COL_D);
-}
-
-void drawCurrent(Gfx& g, const WeatherData& d, const SmartSlot& slot) {
+void drawLiveTop(Gfx& g, const WeatherData& d) {
   const CurrentConditions& c = d.cur;
-  drawIcon(g, c.icon, 82, 122, 1.0f);
+  drawIcon(g, c.icon, 92, 136, 1.15f);
 
-  // big temperature
+  // big temperature: 170 px, shrinks so that it never reaches the right-hand rows
   char tb[16];
   if (isfinite(c.tempF)) snprintf(tb, sizeof tb, "%d\xC2\xB0", (int)lroundf(c.tempF)); else snprintf(tb, sizeof tb, "--");
-  static const EFont* const tf[] = {&AtkB136, &AtkB84, &AtkB50};
-  const EFont& f = fitFont(tb, tf, 3, 332);
-  int capMid = 184 - measureText(AtkB136, "0").inkAscent / 2;
+  static const EFont* const tf[] = {&AtkB170, &AtkB136, &AtkB76};
+  const EFont& f = fitFont(tb, tf, 3, 548 - 176);
+  int capMid = 236 - measureText(AtkB170, "0").inkAscent / 2;
   int base = capMid + measureText(f, "0").inkAscent / 2;
-  txt(g, 146, base, tb, f, COL_K);
+  txt(g, 176, base, tb, f, COL_K);
 
-  // condition + feels like
-  char feels[32] = "", cond[COND_LEN + 8];
-  if (isfinite(c.feelsLikeF)) { char t[16]; fTemp(t, sizeof t, c.feelsLikeF); snprintf(feels, sizeof feels, SEP "feels %s", t); }
+  // condition
+  char cond[COND_LEN + 8];
   trimCopy(cond, sizeof cond, c.conditions);
-  if (!feels[0] && !cond[0]) snprintf(cond, sizeof cond, "--");
-  int avail = 440 - tw(AtkR22, feels);
-  char line[96];
-  if (!cond[0]) snprintf(line, sizeof line, "%s", feels + 5);                 // skip the leading separator
-  else { char c2[48]; ellipsize(c2, sizeof c2, cond, AtkR22, avail); snprintf(line, sizeof line, "%s%s", c2, feels); }
-  txt(g, 32, 226, line, AtkR22, COL_D);
+  if (!cond[0]) snprintf(cond, sizeof cond, "--");
+  if (clean(cond) != cond) snprintf(cond, sizeof cond, "--");      // a nan/inf word is refused once, here
+  static const EFont* const cf[] = {&AtkB34, &AtkB28, &AtkB24};
+  txtFit(g, 32, 292, cond, cf, 3, 540, COL_K);
 
-  // 2x2 stat grid
-  char v[24], sub[48], t1[16], t2[24];
-  // WIND
+  // three rows: label 28, value 56 bold, unit 28
+  char v[24];
+  struct Row { const char* label; const char* unit; } rows[3] = {{"Wind", "mph"}, {"Rain today", "in"}, {"Humidity", "%"}};
   fInt(v, sizeof v, c.windMph);
-  const char* dir = (isfinite((float)c.windDirDeg) && c.windDirDeg >= 0) ? degToCompass((float)c.windDirDeg) : "--";
-  sub[0] = 0;
-  if (!isDash(dir)) snprintf(sub, sizeof sub, "%s", dir);
-  if (isfinite(c.gustMph)) {
-    fInt(t1, sizeof t1, c.gustMph);
-    char g2[32]; snprintf(g2, sizeof g2, "gusts %s", t1);
-    if (sub[0]) strncat(sub, " " MID_DOT " ", sizeof sub - strlen(sub) - 1);
-    strncat(sub, g2, sizeof sub - strlen(sub) - 1);
-  }
-  drawStat(g, 486, 60, "WIND", v, "mph", sub);
-  // RAIN TODAY
+  char vals[3][24];
+  snprintf(vals[0], sizeof vals[0], "%s", v);
   float rainToday = isfinite(c.rainTodayIn) ? c.rainTodayIn : (d.today.valid ? d.today.rainIn : NAN);
-  fFix(v, sizeof v, rainToday, 2);
-  sub[0] = 0;
-  if (isfinite(c.rainRateInHr) && c.rainRateInHr > 0) { fFix(t1, sizeof t1, c.rainRateInHr, 2); snprintf(sub, sizeof sub, "%s in/hr now", t1); }
-  else if (isfinite(c.rainYesterdayIn)) { fFix(t1, sizeof t1, c.rainYesterdayIn, 2); snprintf(sub, sizeof sub, "yesterday %s", t1); }
-  drawStat(g, 640, 60, "RAIN TODAY", v, "in", sub);
-  // HUMIDITY
-  fInt(v, sizeof v, c.humidityPct == 0 && !(d.have & (HAVE_FORECAST | HAVE_OBS)) ? NAN : (float)c.humidityPct);
-  sub[0] = 0;
-  if (isfinite(c.dewPointF)) { fTemp(t2, sizeof t2, c.dewPointF); snprintf(sub, sizeof sub, "dew point %s", t2); }
-  drawStat(g, 486, 148, "HUMIDITY", v, "%", sub);
-  // PRESSURE
-  fFix(v, sizeof v, c.pressureInHg, 2);
-  const char* trend = c.pressureTrend < 0 ? "falling \xE2\x86\x93" : c.pressureTrend > 0 ? "rising \xE2\x86\x91" : "steady";
-  drawStat(g, 640, 148, "PRESSURE", v, "in", isfinite(c.pressureInHg) ? trend : "");
-
-  drawSlot(g, slot);
+  fFix(vals[1], sizeof vals[1], rainToday, 2);
+  fInt(vals[2], sizeof vals[2], c.humidityPct == 0 && !(d.have & (HAVE_FORECAST | HAVE_OBS)) ? NAN : (float)c.humidityPct);
+  static const EFont* const vf[] = {&AtkB56, &AtkB46, &AtkB34};
+  for (int i = 0; i < 3; i++) {
+    int y = 112 + i * 78;
+    txt(g, 580, y, rows[i].label, AtkR28, COL_K);
+    int maxW = 936 - (580 + tw(AtkR28, rows[i].label) + 20);
+    drawValueUnit(g, 936, y + 6, vals[i], rows[i].unit, vf, 3, AtkR28, 6, maxW);
+    if (i < 2) g.hline(580, y + 26, 356, COL_L);
+  }
+  rule(g, 316);
 }
 
-// Chart geometry (mockup): plot x 60..930, y 274..386, "now" in the middle.
-struct LiveChart {
-  float past[25], fut[25];
-  float rain[24];
-  float pop[24];
-  uint16_t strikes[24];
-  uint32_t startEpoch;   // epoch of slot 0 (clock hour, 23 h before the current hour)
-  bool anyPast, anyFut, anyHist;
-};
+// Chart geometry (mockup hChart): x is TRUE TIME over [now - 6 h, now + 18 h] mapped to x 44..916 (see liveChartX).
+const int CH_X = 44, CH_W = 872, CH_Y = 368, CH_H = 76, CH_BASE = 488, CH_RH = 30;
+const int CH_BACK_S = 6 * 3600, CH_FWD_S = 18 * 3600;
 
-void buildLiveChart(const WeatherData& d, LiveChart& c, int64_t now) {
-  bool hist = (d.have & HAVE_HISTORY) != 0;
-  c.anyHist = false;
-  for (int j = 0; hist && j < HIST_BUCKETS; j++) if (d.hist[j].valid) c.anyHist = true;
-  int64_t ref = d.cur.time ? (int64_t)d.cur.time : now;
-  c.startEpoch = (hist && d.histStartEpoch) ? d.histStartEpoch : (uint32_t)(ref / 3600 * 3600 - 23 * 3600);
-  for (int i = 0; i < 25; i++) { c.past[i] = NAN; c.fut[i] = NAN; }
-  for (int i = 0; i < 24; i++) { c.rain[i] = 0; c.pop[i] = NAN; c.strikes[i] = 0; }
-  if (hist) {
-    for (int j = 0; j < HIST_BUCKETS; j++) {
-      const HistBucket& b = d.hist[j];
-      if (!b.valid) continue;
-      c.past[j] = b.tempF;
-      if (isfinite(b.rainIn)) c.rain[j] = b.rainIn;
-      c.strikes[j] = b.strikes;
+struct SeriesPt { int x; float v; };   // v = NAN breaks the line
+
+// Draws runs of finite points as a solid or dashed polyline (a lone point becomes a dot).
+void drawRuns(Gfx& g, const SeriesPt* p, int n, const AxisRange& ax, int thickness, bool dashed) {
+  int i = 0;
+  while (i < n) {
+    while (i < n && !isfinite(p[i].v)) i++;
+    int j = i;
+    while (j < n && isfinite(p[j].v)) j++;
+    int len = j - i;
+    if (len == 1) {
+      g.fillCircle(p[i].x, (int)lroundf(mapY(p[i].v, ax.min, ax.max, CH_Y, CH_H)), thickness / 2, COL_K);
+    } else if (len > 1) {
+      Pt pts[HIST_BUCKETS + HOURLY_FC_MAX + 2];
+      int m = len > HIST_BUCKETS + HOURLY_FC_MAX ? HIST_BUCKETS + HOURLY_FC_MAX : len;
+      for (int k = 0; k < m; k++) pts[k] = {(float)p[i + k].x, mapY(p[i + k].v, ax.min, ax.max, CH_Y, CH_H)};
+      if (dashed) g.dashedPolyline(pts, m, thickness, COL_K, 14, 10);
+      else g.polyline(pts, m, thickness, COL_K, CAP_ROUND);
     }
+    i = j;
   }
-  c.past[24] = isfinite(d.cur.tempF) ? d.cur.tempF : NAN;
-  for (int i = 0; i < d.hourlyCount && i < HOURLY_FC_MAX; i++) {
-    const HourlyFc& h = d.hourly[i];
-    int slot = (int)lround(((double)h.time - (double)c.startEpoch) / 3600.0);
-    if (slot < 24 || slot > 48) continue;
-    c.fut[slot - 24] = h.tempF;
-    if (slot < 48) c.pop[slot - 24] = (float)h.precipProbPct;
-  }
-  if (isfinite(c.past[24])) c.fut[0] = c.past[24];   // join the two halves at "now"
-  int fin = 0;
-  for (int i = 0; i < 25; i++) if (isfinite(c.past[i])) fin++;
-  c.anyPast = fin > 1;
-  fin = 0;
-  for (int i = 0; i < 25; i++) if (isfinite(c.fut[i])) fin++;
-  c.anyFut = fin > 1;
-}
-
-void popNoteText(char* out, size_t n, const LiveChart& c) {
-  out[0] = 0;
-  int best = -1; float bv = 0;
-  for (int i = 0; i < 24; i++) if (isfinite(c.pop[i]) && c.pop[i] > bv) { bv = c.pop[i]; best = i; }
-  bool any = false;
-  for (int i = 0; i < 24; i++) if (isfinite(c.pop[i])) any = true;
-  if (!any) return;
-  if (best < 0 || bv < 20) { snprintf(out, n, "no rain expected"); return; }
-  int64_t t = (int64_t)c.startEpoch + (int64_t)(24 + best) * 3600;
-  struct tm lt, nt;
-  char h[16];
-  formatHourLabel(h, sizeof h, localHourOfEpoch((uint32_t)t));
-  int64_t nowish = (int64_t)c.startEpoch + 24 * 3600;
-  if (localTm(t, &lt) && localTm(nowish, &nt) && (lt.tm_yday != nt.tm_yday || lt.tm_year != nt.tm_year))
-    snprintf(out, n, "%d%% chance %s %s", (int)lroundf(bv), dowName(lt.tm_wday), h);
-  else
-    snprintf(out, n, "%d%% chance %s", (int)lroundf(bv), h);
 }
 
 void drawLiveChartBlock(Gfx& g, const WeatherData& d, int64_t now) {
-  LiveChart c;
-  buildLiveChart(d, c, now);
-  const int cx = 60, cy = 274, cw = 870, ch = 112, half = cw / 2, nowX = cx + half;
-  const float bw = half / 24.0f;
+  const int64_t nowT = d.cur.time ? (int64_t)d.cur.time : now;
+  const int64_t T0 = nowT - CH_BACK_S, T1 = nowT + CH_FWD_S;
+  auto X = [&](int64_t t) { return liveChartX(t, nowT); };
+  const int nowX = X(nowT), rightX = X(T1);
+  const bool hist = (d.have & HAVE_HISTORY) != 0 && d.histStartEpoch;
+  bool anyHist = false;
+  for (int j = 0; (d.have & HAVE_HISTORY) && j < HIST_BUCKETS; j++) if (d.hist[j].valid) anyHist = true;
 
-  txt(g, cx + 4, 264, "MEASURED " MID_DOT " last 24 h", AtkB14, COL_D, ALIGN_LEFT, 2);
-  txt(g, cx + cw - 4, 264, "FORECAST " MID_DOT " next 24 h", AtkB14, COL_D, ALIGN_RIGHT, 2);
-  g.fillRect(nowX, cy - 4, half, 196, COL_FC);
-
-  AxisRange ax = autoRange2(c.past, 25, c.fut, 25, 5, 3);
-  ChartRect full{cx, cy, cw, ch}, lr{cx, cy, half, ch}, rr{nowX, cy, half, ch};
-  if (ax.valid) {
-    drawGrid(g, full, ax, AtkR15, 0, COL_XL, COL_D);
-    LineStyle past; past.thickness = 4; past.fillArea = true; past.fillGrey = COL_XL;
-    drawLineSeries(g, c.past, 25, lr, ax, past);
-    LineStyle fut; fut.thickness = 3; fut.dashed = true; fut.dash = 10; fut.gap = 7;
-    drawLineSeries(g, c.fut, 25, rr, ax, fut);
-  }
-  drawNowLine(g, nowX, cy - 6, cy + 196, 2, COL_K);
-  if (ax.valid) {
-    drawEndDot(g, c.past, 25, lr, ax, 7, COL_K);
-    drawHiLoMarker(g, c.past, 25, lr, ax, true, AtkB19);
-    drawHiLoMarker(g, c.past, 25, lr, ax, false, AtkB19);
-    drawHiLoMarker(g, c.fut, 25, rr, ax, false, AtkB19);
-    drawHiLoMarker(g, c.fut, 25, rr, ax, true, AtkB19);
-  }
-  if (!c.anyPast) txt(g, cx + half / 2, cy + ch / 2 + 6, c.anyHist ? "no data" : "no history", AtkR20, COL_M, ALIGN_CENTER);
-  if (!c.anyFut) txt(g, nowX + half / 2, cy + ch / 2 + 6, "no forecast", AtkR20, COL_M, ALIGN_CENTER);
-
-  // rain band
-  const int ry = cy + ch + 10, rh = 40;
-  g.hline(cx, ry + rh, cw, COL_L);
-  BarStyle bs; bs.baseline = false; bs.gap = 4; bs.minHeight = 3; bs.floorMax = 0.05f; bs.grey = COL_K;
-  drawBars(g, c.rain, 24, ChartRect{cx, ry, half, rh}, 0, bs);
-  drawProbBars(g, c.pop, 24, ChartRect{nowX, ry, half, rh}, COL_M, 4);
-  txt(g, cx - 8, ry + rh - 2, "rain", AtkR14, COL_D, ALIGN_RIGHT);
-  float total = 0;
-  for (int i = 0; i < 24; i++) total += c.rain[i];
-  char note[48];
-  if (c.anyHist && total >= 0.005f) {
-    snprintf(note, sizeof note, "%.2f in last 24 h", total);
-    txt(g, (int)(cx + 2 * bw), ry + 14, note, AtkR15, COL_D);
-  }
-  popNoteText(note, sizeof note, c);
-  if (note[0]) txt(g, cx + cw - 4, ry + 14, note, AtkR15, COL_D, ALIGN_RIGHT);
-
-  // lightning row
-  const int ly = ry + rh + 16;
-  txt(g, cx - 8, ly + 5, "strikes", AtkR14, COL_D, ALIGN_RIGHT);
-  drawLightningRow(g, c.strikes, 24, ChartRect{cx, ly - 10, half, 34}, AtkB13, AtkR14,
-                   c.anyHist ? "no lightning in 24 h" : "lightning history unavailable");
-
-  // time axis
-  HourAxis hx{c.startEpoch, 48, 6, 24, CHART_TZ_LOCAL};
-  drawHourAxis(g, cx, cw, 494, hx, AtkR15, AtkB15);
-}
-
-void drawLiveInfo(Gfx& g, const WeatherData& d, int64_t now) {
-  rule(g, 504);
-  char line[200] = "", item[64], a[16];
-  if (d.dailyCount > 0 && d.daily[0].sunrise) { fmtClockShort(a, sizeof a, d.daily[0].sunrise); snprintf(item, sizeof item, "Sunrise %s", a); addItem(line, sizeof line, item); }
-  if (d.dailyCount > 0 && d.daily[0].sunset) { fmtClockShort(a, sizeof a, d.daily[0].sunset); snprintf(item, sizeof item, "Sunset %s", a); addItem(line, sizeof line, item); }
-  if (isfinite(d.cur.uv)) { snprintf(item, sizeof item, "UV %d", (int)lroundf(d.cur.uv)); addItem(line, sizeof line, item); }
-  rainTotalsText(item, sizeof item, d, now);
-  addItem(line, sizeof line, item);
-  stationBatteryText(item, sizeof item, d.cur.stationBatteryV);
-  addItem(line, sizeof line, item);
-  if (!line[0]) snprintf(line, sizeof line, "--");
-  drawInfoLine(g, 529, line);
-}
-
-// ---------------------------------------------------------------------------------------------
-// Overnight pieces
-// ---------------------------------------------------------------------------------------------
-struct NightRow { const char* label; char time[16]; char value[24]; };
-
-void drawNightRows(Gfx& g, const DaySummary& s) {
-  bool v = s.valid;
-  NightRow rows[6] = {};
-  char t[16];
-  rows[0].label = "High";      rows[1].label = "Low";    rows[2].label = "Rain";
-  rows[3].label = "Peak gust"; rows[4].label = "Lightning";
-  char at[24] = "At --";
-  if (v && s.lastTime) {
-    struct tm lt;
-    if (localTm(s.lastTime, &lt)) {
-      int h = lt.tm_hour + (lt.tm_min >= 30 ? 1 : 0);
-      h %= 24;
-      formatHourLabel(t, sizeof t, h);
-      snprintf(at, sizeof at, "At %s", t);
-    }
-  }
-  rows[5].label = at;
-
-  if (v && isfinite(s.highF)) { fmtClock(rows[0].time, sizeof rows[0].time, s.highTime); fTemp(rows[0].value, sizeof rows[0].value, s.highF); }
-  else snprintf(rows[0].value, sizeof rows[0].value, "--");
-  if (v && isfinite(s.lowF)) { fmtClock(rows[1].time, sizeof rows[1].time, s.lowTime); fTemp(rows[1].value, sizeof rows[1].value, s.lowF); }
-  else snprintf(rows[1].value, sizeof rows[1].value, "--");
-  if (v && isfinite(s.rainIn)) snprintf(rows[2].value, sizeof rows[2].value, "%.2f in", s.rainIn); else snprintf(rows[2].value, sizeof rows[2].value, "--");
-  if (v && isfinite(s.peakGustMph)) { fmtClock(rows[3].time, sizeof rows[3].time, s.peakGustTime); snprintf(rows[3].value, sizeof rows[3].value, "%d mph", (int)lroundf(s.peakGustMph)); }
-  else snprintf(rows[3].value, sizeof rows[3].value, "--");
-  if (!v) snprintf(rows[4].value, sizeof rows[4].value, "--");
-  else if (s.strikes == 0) snprintf(rows[4].value, sizeof rows[4].value, "none");
-  else snprintf(rows[4].value, sizeof rows[4].value, "%u strikes", (unsigned)s.strikes);
-  if (v && isfinite(s.lastTempF)) { snprintf(rows[5].time, sizeof rows[5].time, "last reading"); fTemp(rows[5].value, sizeof rows[5].value, s.lastTempF); }
-  else snprintf(rows[5].value, sizeof rows[5].value, "--");
-
-  for (int i = 0; i < 6; i++) {
-    int y = 140 + i * 46;
-    txt(g, 28, y, rows[i].label, AtkB22, COL_K);
-    if (rows[i].time[0] && !isDash(rows[i].time)) txt(g, 150, y, rows[i].time, AtkR17, COL_D);
-    static const EFont* const vf[] = {&AtkB32, &AtkB22};
-    txtFit(g, 430, y + 2, rows[i].value, vf, 2, 270, COL_K, ALIGN_RIGHT);
-    if (i < 5) g.hline(28, y + 16, 402, COL_XL);
-  }
-}
-
-void drawNightSpark(Gfx& g, const WeatherData& d, const ScreenStatus& st, int64_t now, int64_t dateRef, OvernightTitles titles) {
-  txt(g, 28, 420, titles == TITLES_TODAY_TOMORROW ? "Today's temperature" : "Yesterday's temperature", AtkR15, COL_D);
-  int64_t mid = localMidnight(dateRef);
-  int endHour = 23;
-  if (titles == TITLES_TODAY_TOMORROW) {
-    struct tm nt;
-    if (localTm(now, &nt)) endHour = nt.tm_hour + (nt.tm_min >= 30 ? 1 : 0);
-    if (endHour < 2) endHour = 2;
-    if (endHour > 23) endHour = 23;
-  }
-  float v[24];
-  for (int i = 0; i < 24; i++) v[i] = NAN;
-  if (d.have & HAVE_HISTORY) {
+  // measured points: completed hours at their midpoint, the running hour at the middle of [hour start, now]
+  SeriesPt meas[HIST_BUCKETS + 1];
+  int nm = 0;
+  if (hist) {
     for (int j = 0; j < HIST_BUCKETS; j++) {
-      if (!d.hist[j].valid) continue;
-      int64_t hs = (int64_t)d.histStartEpoch + (int64_t)j * 3600;
-      int h = (int)((hs - mid) / 3600);
-      if (hs < mid || h < 0 || h > endHour) continue;
-      v[h] = d.hist[j].tempF;
+      int64_t s = (int64_t)d.histStartEpoch + (int64_t)j * 3600;
+      int64_t mid = (s <= nowT && nowT < s + 3600) ? (s + nowT) / 2 : s + 1800;
+      if (mid < T0 || mid >= nowT) continue;
+      meas[nm++] = {X(mid), d.hist[j].valid ? d.hist[j].tempF : NAN};
     }
   }
-  if (d.today.valid && d.today.lastTime && isfinite(d.today.lastTempF)) {
-    int h = (int)(((int64_t)d.today.lastTime - mid) / 3600);
-    if (h >= 0 && h <= endHour && !isfinite(v[h])) v[h] = d.today.lastTempF;
+  if (isfinite(d.cur.tempF)) meas[nm++] = {nowX, d.cur.tempF};
+  // forecast points at their own epochs, starting from the current reading
+  SeriesPt fut[HOURLY_FC_MAX + 1];
+  int nf = 0;
+  if (isfinite(d.cur.tempF)) fut[nf++] = {nowX, d.cur.tempF};
+  for (int i = 0; i < d.hourlyCount && i < HOURLY_FC_MAX; i++) {
+    const HourlyFc& h = d.hourly[i];
+    if ((int64_t)h.time <= nowT || (int64_t)h.time > T1) continue;
+    fut[nf++] = {X(h.time), h.tempF};
   }
-  int fin = 0;
-  for (int i = 0; i <= endHour; i++) if (isfinite(v[i])) fin++;
-  if (fin >= 2) drawSparkline(g, v, endHour + 1, ChartRect{28, 430, 402, 50}, 3, COL_XL, true, 4);
-  else txt(g, 229, 462, "not enough data", AtkR17, COL_M, ALIGN_CENTER);
-  for (int h = 0; h < endHour - 2; h += 6) {
-    char lb[16];
-    formatHourLabel(lb, sizeof lb, h);
-    int x = 28 + (int)lroundf((float)h / endHour * 402);
-    txt(g, x, 498, lb, AtkR14, COL_D, h == 0 ? ALIGN_LEFT : ALIGN_CENTER);
+  auto countFinite = [](const SeriesPt* p, int n) { int c = 0; for (int i = 0; i < n; i++) if (isfinite(p[i].v)) c++; return c; };
+  bool anyMeas = countFinite(meas, nm) > 1, anyFut = countFinite(fut, nf) > 1;
+
+  // temperature scale: data range plus 3 degrees on both sides
+  float lo = 1e9f, hi = -1e9f;
+  for (int i = 0; i < nm; i++) if (isfinite(meas[i].v)) { if (meas[i].v < lo) lo = meas[i].v; if (meas[i].v > hi) hi = meas[i].v; }
+  for (int i = 0; i < nf; i++) if (isfinite(fut[i].v)) { if (fut[i].v < lo) lo = fut[i].v; if (fut[i].v > hi) hi = fut[i].v; }
+  AxisRange ax{lo - 3, hi + 3, hi >= lo};
+
+  // clock-hour ticks every 3 h (local hours divisible by 3) at their true x
+  struct Tick { int64_t t; int x; int hour; };
+  Tick ticks[12];
+  int nt = 0;
+  for (int64_t t = (T0 + 3599) / 3600 * 3600; t <= T1 && nt < 12; t += 3600) {
+    struct tm lt;
+    if (!localTm(t, &lt) || lt.tm_min != 0 || lt.tm_hour % 3 != 0) continue;
+    ticks[nt++] = {t, X(t), lt.tm_hour};
   }
-  char lb[16];
-  formatHourLabel(lb, sizeof lb, endHour);
-  txt(g, 430, 498, lb, AtkR14, COL_D, ALIGN_RIGHT);
-  (void)st;
+  for (int i = 0; i < nt; i++) if (abs(ticks[i].x - nowX) > 4) g.vline(ticks[i].x, CH_Y - 8, CH_BASE - (CH_Y - 8), COL_L);
+
+  // rain: solid = measured per hour (spanning its real hour, clipped to the window), outlined = forecast probability
+  float rain[HIST_BUCKETS] = {0}, rmax = 0.05f, rainTotal = 0;
+  if (hist) {
+    for (int j = 0; j < HIST_BUCKETS; j++) {
+      int64_t s = (int64_t)d.histStartEpoch + (int64_t)j * 3600;
+      if (s + 3600 <= T0 || s >= nowT || !d.hist[j].valid || !isfinite(d.hist[j].rainIn)) continue;
+      rain[j] = d.hist[j].rainIn;
+      if (rain[j] > rmax) rmax = rain[j];
+      rainTotal += rain[j] * (s >= T0 ? 1.0f : (float)(s + 3600 - T0) / 3600.0f);
+    }
+    for (int j = 0; j < HIST_BUCKETS; j++) {
+      if (rain[j] <= 0) continue;
+      int64_t s = (int64_t)d.histStartEpoch + (int64_t)j * 3600;
+      int x0 = X(s < T0 ? T0 : s), x1 = X(s + 3600 > nowT ? nowT : s + 3600);
+      int bx = x0 + 2, bw = x1 - x0 - 4;
+      if (bw < 3) { bx = x0; bw = x1 - x0 < 3 ? 3 : x1 - x0; }
+      int h = barHeight(rain[j], rmax, CH_RH, 5);
+      g.fillRect(bx, CH_BASE - h, bw, h, COL_K);
+    }
+  }
+  for (int i = 0; i < d.hourlyCount && i < HOURLY_FC_MAX; i++) {
+    const HourlyFc& h = d.hourly[i];
+    int64_t s = h.time, e = s + 3600;
+    if (e <= nowT || s >= T1) continue;
+    int x0 = X(s < nowT ? nowT : s), x1 = X(e > T1 ? T1 : e);
+    int bw = x1 - x0 - 6;
+    if (bw < 4) continue;
+    int ph = barHeight((float)h.precipProbPct, 100.0f, CH_RH, 5);
+    if (ph <= 0) continue;
+    g.fillRect(x0 + 3, CH_BASE - ph, bw, ph, COL_PAPER);
+    g.rect(x0 + 3, CH_BASE - ph, bw, ph, COL_K, 2);
+  }
+  g.fillRect(CH_X, CH_BASE - 1, CH_W, 2, COL_K);
+
+  // lines, now line and dot
+  if (ax.valid) {
+    drawRuns(g, meas, nm, ax, 5, false);
+    drawRuns(g, fut, nf, ax, 5, true);
+  }
+  drawNowLine(g, nowX, CH_Y - 10, CH_BASE, 2, COL_K);
+  if (ax.valid && isfinite(d.cur.tempF))
+    g.fillCircle(nowX, (int)lroundf(mapY(d.cur.tempF, ax.min, ax.max, CH_Y, CH_H)), 10, COL_K);
+  if (!anyMeas) txt(g, CH_X + (nowX - CH_X) / 2, CH_Y + CH_H / 2 + 8, anyHist ? "no data" : "no history", AtkR22, COL_K, ALIGN_CENTER);
+  if (!anyFut) txt(g, nowX + (rightX - nowX) / 2, CH_Y + CH_H / 2 + 8, "no forecast", AtkR22, COL_K, ALIGN_CENTER);
+
+  // note, only when it rained in the measured window
+  if (anyHist && rainTotal >= 0.005f) {
+    char note[48];
+    snprintf(note, sizeof note, "Rain, last 6 h: %.2f in", rainTotal);
+    txt(g, CH_X, 344, note, AtkR22, COL_K);
+  }
+
+  // time labels at the ticks (skipping any that would hit NOW) and forecast temperatures on the line
+  txt(g, nowX, 522, "NOW", AtkB22, COL_K, ALIGN_CENTER);
+  for (int i = 0; i < nt; i++) {
+    int x = ticks[i].x;
+    if (abs(x - nowX) >= 64) {
+      char lb[16];
+      formatHourLabel(lb, sizeof lb, ticks[i].hour);
+      int w = tw(AtkR22, lb);
+      int lx = x < 24 + w / 2 ? 24 + w / 2 : x > 936 - w / 2 ? 936 - w / 2 : x;
+      txt(g, lx, 522, lb, AtkR22, COL_K, ALIGN_CENTER);
+    }
+    if (ticks[i].t > nowT && x - nowX >= 40 && ax.valid) {
+      for (int k = 0; k < d.hourlyCount && k < HOURLY_FC_MAX; k++) {
+        const HourlyFc& h = d.hourly[k];
+        if (llabs((int64_t)h.time - ticks[i].t) > 1800 || !isfinite(h.tempF)) continue;
+        int py = (int)lroundf(mapY(h.tempF, ax.min, ax.max, CH_Y, CH_H));
+        g.fillCircle(x, py, 5, COL_K);
+        char t[16];
+        formatDegrees(t, sizeof t, h.tempF);
+        int lx = x > CH_X + CH_W - 30 ? CH_X + CH_W - 30 : x;
+        knockoutText(g, lx, py - 14, t, AtkB24, ALIGN_CENTER);
+        txt(g, lx, py - 14, t, AtkB24, COL_K, ALIGN_CENTER);
+        break;
+      }
+    }
+  }
 }
 
-// Picks the daily entry (and its date) for the right column and fills the hourly 5 AM - 10 PM series.
-void drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitles titles, int64_t* sunriseOut) {
+// Black band that replaces the chart area (y 318..540) when something needs attention.
+void drawAlertBand(Gfx& g, const Alert& a) {
+  const int y = 318, h = 222, mid = y + h / 2;
+  g.fillRect(0, y, PANEL_WIDTH, h, COL_K);
+  switch (a.kind) {
+    case AlertKind::Lightning: drawBolt(g, 74, (float)mid, 4.0f, COL_PAPER); break;
+    case AlertKind::Raining:
+      for (int i = -1; i <= 1; i++) g.line(74 + i * 32 + 10, mid - 30, 74 + i * 32 - 10, mid + 30, 7, COL_PAPER);
+      break;
+    case AlertKind::UV: drawSun(g, 74, mid, 20, 5, COL_K, COL_PAPER); break;
+    default: break;
+  }
+  static const EFont* const hf[] = {&AtkB46, &AtkB34, &AtkB28};
+  static const EFont* const sf[] = {&AtkR28, &AtkR24, &AtkR22};
+  if (a.sub[0]) {
+    txtFit(g, 140, mid - 2, a.headline, hf, 3, 936 - 140, COL_PAPER);
+    txtFit(g, 140, mid + 40, a.sub, sf, 3, 936 - 140, COL_PAPER);
+  } else {
+    txtFit(g, 140, mid + 16, a.headline, hf, 3, 936 - 140, COL_PAPER);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Overnight (N3)
+// ---------------------------------------------------------------------------------------------
+void drawNightHeader(Gfx& g) {
+  g.fillRect(0, 0, PANEL_WIDTH, 64, COL_K);
+  drawHeaderLabel(g, 24, 42, COL_PAPER, AtkB22);
+  char next[32];
+  int h12 = QUIET_END_HOUR % 12; if (h12 == 0) h12 = 12;
+  if (QUIET_END_MIN) snprintf(next, sizeof next, "Paused until %d:%02d %s", h12, QUIET_END_MIN, QUIET_END_HOUR < 12 ? "AM" : "PM");
+  else snprintf(next, sizeof next, "Paused until %d %s", h12, QUIET_END_HOUR < 12 ? "AM" : "PM");
+  int w = txt(g, 936, 42, next, AtkB24, COL_PAPER, ALIGN_RIGHT);
+  drawMoon(g, 936 - w - 36, 32, 13, COL_PAPER, COL_K);
+}
+
+// TODAY / YESTERDAY row: High, Low, Rain (22 px label above a 50 px bold value).
+void drawNightToday(Gfx& g, const DaySummary& s, OvernightTitles titles) {
+  txt(g, 28, 102, titles == TITLES_TODAY_TOMORROW ? "TODAY" : "YESTERDAY", AtkB22, COL_K, ALIGN_LEFT, 2);
+  bool v = s.valid;
+  char hi[16], lo[16], rain[16];
+  fTemp(hi, sizeof hi, v ? s.highF : NAN);
+  fTemp(lo, sizeof lo, v ? s.lowF : NAN);
+  fFix(rain, sizeof rain, v ? s.rainIn : NAN, 2);
+  const char* labels[3] = {"High", "Low", "Rain"};
+  const char* vals[3] = {hi, lo, rain};
+  static const EFont* const vf[] = {&AtkB50, &AtkB34};
+  for (int i = 0; i < 3; i++) {
+    int x = 28 + i * 140;
+    txt(g, x, 132, labels[i], AtkR22, COL_K);
+    if (i == 2) {
+      int maxW = 440 - x;
+      const EFont& f = fitFont(rain, vf, 2, isDash(rain) ? maxW : maxW - tw(AtkR22, "in") - 6);
+      int w = txt(g, x, 184, rain, f, COL_K);
+      if (!isDash(rain)) txt(g, x + w + 6, 184, "in", AtkR22, COL_K);
+    } else {
+      txtFit(g, x, 184, vals[i], vf, 2, 136, COL_K);
+    }
+  }
+}
+
+// Tomorrow (or today after midnight): title, icon, hi / lo, condition, chart. Returns the sunrise epoch.
+int64_t drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitles titles) {
   int idx = titles == TITLES_TODAY_TOMORROW ? 1 : 0;
   bool have = d.dailyCount > idx;
   const DailyFc* df = have ? &d.daily[idx] : nullptr;
   int64_t dayRef = have && df->dayStart ? (int64_t)df->dayStart + 12 * 3600 : now + (int64_t)idx * 86400;
   struct tm dt;
   localTm(dayRef, &dt);
-  char title[48], dow[8], mon[8];
+  char title[48], dow[8];
   snprintf(dow, sizeof dow, "%s", dowName(dt.tm_wday)); upperAscii(dow);
-  snprintf(mon, sizeof mon, "%s", monName(dt.tm_mon)); upperAscii(mon);
-  snprintf(title, sizeof title, "%s " MID_DOT " %s %s %d", titles == TITLES_TODAY_TOMORROW ? "TOMORROW" : "TODAY", dow, mon, dt.tm_mday);
-  txt(g, 492, 92, title, AtkB15, COL_D, ALIGN_LEFT, 2);
-  if (sunriseOut) *sunriseOut = have ? df->sunrise : 0;
+  snprintf(title, sizeof title, "%s " MID_DOT " %s", titles == TITLES_TODAY_TOMORROW ? "TOMORROW" : "TODAY", dow);
+  txt(g, 480, 102, title, AtkB22, COL_K, ALIGN_LEFT, 2);
 
-  // hourly series for that date
-  float temp[18], pop[18], gustMax = NAN;
-  for (int i = 0; i < 18; i++) { temp[i] = NAN; pop[i] = NAN; }
+  // hourly series for the whole day: hours 0..23 plus 12 AM of the next day as point 24.
+  // Hours that are already over (only after midnight, i.e. TODAY mode) use the measured history buckets
+  // (solid line, solid rain bars); everything else is forecast (dashed line, outlined probability bars).
+  float tF[25], tM[25], pop[24], rainM[24];
+  for (int i = 0; i < 25; i++) { tF[i] = NAN; tM[i] = NAN; }
+  for (int i = 0; i < 24; i++) { pop[i] = NAN; rainM[i] = NAN; }
+  struct tm nt;
+  localTm(dayRef + 86400, &nt);
   for (int i = 0; i < d.hourlyCount && i < HOURLY_FC_MAX; i++) {
     const HourlyFc& h = d.hourly[i];
     struct tm ht;
-    if (!localTm(h.time, &ht) || ht.tm_yday != dt.tm_yday || ht.tm_year != dt.tm_year) continue;
-    if (isfinite(h.gustMph) && (!isfinite(gustMax) || h.gustMph > gustMax)) gustMax = h.gustMph;
-    if (ht.tm_hour < 5 || ht.tm_hour > 22) continue;
-    temp[ht.tm_hour - 5] = h.tempF;
-    pop[ht.tm_hour - 5] = (float)h.precipProbPct;
+    if (!localTm(h.time, &ht)) continue;
+    if (ht.tm_yday == dt.tm_yday && ht.tm_year == dt.tm_year) { tF[ht.tm_hour] = h.tempF; pop[ht.tm_hour] = (float)h.precipProbPct; }
+    else if (ht.tm_yday == nt.tm_yday && ht.tm_year == nt.tm_year && ht.tm_hour == 0) tF[24] = h.tempF;
   }
+  int lastM = -1;
+  if ((d.have & HAVE_HISTORY) && d.histStartEpoch) {
+    for (int j = 0; j < HIST_BUCKETS; j++) {
+      int64_t bs = (int64_t)d.histStartEpoch + (int64_t)j * 3600;
+      struct tm bt;
+      if (bs + 3600 > now || !d.hist[j].valid || !localTm(bs, &bt)) continue;
+      if (bt.tm_yday != dt.tm_yday || bt.tm_year != dt.tm_year) continue;
+      tM[bt.tm_hour] = d.hist[j].tempF;
+      rainM[bt.tm_hour] = isfinite(d.hist[j].rainIn) ? d.hist[j].rainIn : 0;
+      pop[bt.tm_hour] = NAN;
+      if (bt.tm_hour > lastM) lastM = bt.tm_hour;
+    }
+  }
+  if (lastM >= 0) {                                   // forecast takes over after the last measured hour, joined there
+    for (int i = 0; i <= lastM; i++) tF[i] = NAN;
+    tF[lastM] = tM[lastM];
+  }
+  float tC[25];                                       // what the chart shows (and what hi / lo are taken from)
+  for (int i = 0; i < 25; i++) tC[i] = isfinite(tM[i]) ? tM[i] : tF[i];
 
-  // forecast icon + hi / lo
-  if (have) drawIcon(g, df->icon, 548, 160, 0.95f);
-  char hi[16], lo[24];
+  // icon, hi "/ lo", condition
+  if (have) drawIcon(g, df->icon, 532, 160, 0.75f);
+  char hi[16], lo[24], lt[16];
   fTemp(hi, sizeof hi, have ? df->highF : NAN);
-  char lt[16]; fTemp(lt, sizeof lt, have ? df->lowF : NAN);
+  fTemp(lt, sizeof lt, have ? df->lowF : NAN);
   snprintf(lo, sizeof lo, "/ %s", lt);
   struct HiLo { const EFont* h; const EFont* l; };
-  static const HiLo opts[] = {{&AtkB84, &AtkR44}, {&AtkB76, &AtkR44}, {&AtkB50, &AtkR22}};
-  const HiLo* pick = &opts[2];
-  for (const HiLo& o : opts) if (616 + tw(*o.h, hi) + 14 + tw(*o.l, lo) <= 936) { pick = &o; break; }
-  int hw = txt(g, 616, 186, hi, *pick->h, COL_K);
-  txt(g, 616 + hw + 14, 186, lo, *pick->l, COL_D);
-
-  // conditions, chance, wind note
-  static const EFont* const cf[] = {&AtkB22, &AtkB20, &AtkB18};
+  static const HiLo opts[] = {{&AtkB76, &AtkR44}, {&AtkB50, &AtkR28}};
+  const HiLo* pick = &opts[1];
+  for (const HiLo& o : opts) if (596 + tw(*o.h, hi) + 14 + tw(*o.l, lo) <= 936) { pick = &o; break; }
+  int hw = txt(g, 596, 186, hi, *pick->h, COL_K);
+  txt(g, 596 + hw + 14, 186, lo, *pick->l, COL_K);
   char dcond[COND_LEN + 1] = "";
   if (have) trimCopy(dcond, sizeof dcond, df->conditions);
-  txtFit(g, 492, 236, dcond[0] ? dcond : (have ? "--" : "Forecast unavailable"), cf, 3, 444, COL_K);
-  char sub[96] = "", part[48];
-  if (have) { snprintf(part, sizeof part, "%d%% chance", (int)df->precipProbPct); addItem(sub, sizeof sub, part); }
-  if (isfinite(gustMax) && gustMax >= 15) {
-    snprintf(part, sizeof part, "%sgusts to %d mph", gustMax >= 30 ? "windy, " : gustMax >= 20 ? "breezy, " : "", (int)lroundf(gustMax));
-    addItem(sub, sizeof sub, part);
-  }
-  static const EFont* const sf[] = {&AtkR18, &AtkR17, &AtkR16};
-  txtFit(g, 492, 264, sub, sf, 3, 444, COL_D);
+  if (clean(dcond) != dcond) snprintf(dcond, sizeof dcond, "--");
+  static const EFont* const cf[] = {&AtkB28, &AtkB24};
+  txtFit(g, 480, 220, dcond[0] ? dcond : (have ? "--" : "Forecast unavailable"), cf, 2, 936 - 480, COL_K);
+  rule(g, 234);
 
-  // hourly chart
-  const int cx = 530, cy = 292, cw = 400, ch = 100;
-  AxisRange ax = autoRange(temp, 18, 5, 3);
-  ChartRect cr{cx, cy, cw, ch};
+  // chart: true time, 12 AM to 12 AM (hour h at cx + h * 35, bars span [h, h+1))
+  const int cx = 84, cy = 280, cw = 840, ch = 112;
+  const float bw = (float)cw / 24;
+  AxisRange ax = autoRange(tC, 25, 5, 3);
+  while (ax.valid && (tC_lo(tC) - ax.min) / (ax.max - ax.min) * ch < 36) ax.min -= 5;   // room for the low label below its dot
+  ChartRect full{cx, cy, cw, ch}, lr{cx, cy, cw, ch};
+  g_nightHi = g_nightLo = NAN;
+  const int ry = 404, rh = 48;
+  for (int h = 0; h <= 24; h += 6) g.vline(cx + (int)lroundf(h * bw), cy - 8, ry + rh - (cy - 8), COL_L);
   if (ax.valid) {
-    drawGrid(g, cr, ax, AtkR14, 0, COL_XL, COL_D);
-    LineStyle ls; ls.thickness = 3; ls.dashed = true; ls.dash = 10; ls.gap = 7;
-    drawLineSeries(g, temp, 18, cr, ax, ls);
-    drawHiLoMarker(g, temp, 18, cr, ax, true, AtkB18, 0);
+    drawGrid(g, full, ax, AtkR20, ax.max - ax.min > 30 ? 10.0f : 5.0f, COL_L, COL_K);
+    LineStyle ms; ms.thickness = 4;
+    drawLineSeries(g, tM, 25, lr, ax, ms);
+    LineStyle ls; ls.thickness = 4; ls.dashed = true; ls.dash = 12; ls.gap = 8;
+    drawLineSeries(g, tF, 25, lr, ax, ls);
+    int ih = hiLoIndex(tC, 24, true, 0), il = hiLoIndex(tC, 24, false, 0);   // hours 0..23 of the day itself
+    for (int w = 0; w < 2; w++) {
+      int idx = w == 0 ? ih : il;
+      float px, py;
+      if (idx < 0 || (w == 1 && idx == ih) || !seriesPoint(tC, 25, idx, lr, ax, &px, &py)) continue;
+      g.fillCircle((int)lroundf(px), (int)lroundf(py), 6, COL_K);
+      char t[16];
+      formatDegrees(t, sizeof t, tC[idx]);
+      int lx = (int)lroundf(px);
+      if (lx < cx + 30) lx = cx + 30;
+      if (lx > cx + cw - 30) lx = cx + cw - 30;
+      int by = w == 0 ? (int)lroundf(py) - 18 : (int)lroundf(py) + 32;
+      knockoutText(g, lx, by, t, AtkB28, ALIGN_CENTER);
+      txt(g, lx, by, t, AtkB28, COL_K, ALIGN_CENTER);
+      (w == 0 ? g_nightHi : g_nightLo) = (float)lroundf(tC[idx]);
+    }
   } else {
-    txt(g, cx + cw / 2, cy + ch / 2 + 6, "no forecast", AtkR20, COL_M, ALIGN_CENTER);
+    txt(g, cx + cw / 2, cy + ch / 2 + 8, "no forecast", AtkR22, COL_K, ALIGN_CENTER);
   }
-  const int ry = cy + ch + 10, rh = 36;
-  g.hline(cx, ry + rh, cw, COL_L);
-  drawProbBars(g, pop, 18, ChartRect{cx, ry, cw, rh}, COL_M, 4);
-  txt(g, cx - 6, ry + rh - 2, "rain %", AtkR13, COL_D, ALIGN_RIGHT);
-  static const int axisHours[] = {5, 9, 13, 17, 21};
-  for (int i = 0; i < 5; i++) {
+
+  // rain: measured hours solid, forecast hours outlined with their probability above the bar (10 % or more)
+  float rmax = 0.05f;
+  for (int h = 0; h < 24; h++) if (isfinite(rainM[h]) && rainM[h] > rmax) rmax = rainM[h];
+  for (int h = 0; h < 24; h++) {
+    if (!isfinite(rainM[h]) || rainM[h] <= 0) continue;
+    int bh = barHeight(rainM[h], rmax, rh, 5);
+    g.fillRect(cx + (int)lroundf(h * bw) + 3, ry + rh - bh, (int)lroundf(bw) - 6, bh, COL_K);
+  }
+  drawProbBars(g, pop, 24, ChartRect{cx, ry, cw, rh}, COL_K, 6);
+  g.hline(cx, ry + rh, cw, COL_K);
+  int lastRight = -1000;
+  for (int k = 0; k < 24; k++) {
+    if (!isfinite(pop[k]) || pop[k] < 10) continue;
+    char t[8];
+    snprintf(t, sizeof t, "%d%%", (int)lroundf(pop[k]));
+    int w = tw(AtkB20, t), x = cx + (int)lroundf(k * bw + bw / 2);
+    if (x - w / 2 < lastRight + 4) continue;             // would touch the previous label
+    int top = ry + rh - barHeight(pop[k], 100.0f, rh, 5);
+    txt(g, x, top - 6, t, AtkB20, COL_K, ALIGN_CENTER);
+    lastRight = x + w / 2;
+  }
+  txt(g, cx - 10, ry + rh, "rain", AtkR20, COL_K, ALIGN_RIGHT);
+  for (int h = 0; h <= 24; h += 6) {
     char lb[16];
-    formatHourLabel(lb, sizeof lb, axisHours[i]);
-    int x = cx + (int)lroundf((float)(axisHours[i] - 5) / 17 * cw);
-    txt(g, x, 470, lb, AtkR14, COL_D, i == 0 ? ALIGN_LEFT : ALIGN_CENTER);
+    formatHourLabel(lb, sizeof lb, h % 24);
+    txt(g, cx + (int)lroundf(h * bw), 482, lb, AtkR22, COL_K, ALIGN_CENTER);
   }
+  return have ? (int64_t)df->sunrise : 0;
 }
 
 }  // namespace
@@ -594,6 +561,11 @@ void drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitles t
 // ---------------------------------------------------------------------------------------------
 // Debug hooks
 // ---------------------------------------------------------------------------------------------
+int liveChartX(int64_t epoch, int64_t nowT) {
+  return CH_X + (int)lround((double)(epoch - (nowT - CH_BACK_S)) * CH_W / (CH_BACK_S + CH_FWD_S));
+}
+float screenNightChartHigh() { return g_nightHi; }
+float screenNightChartLow() { return g_nightLo; }
 int screenTextAnomalies() { return g_anomalies; }
 const char* screenLastAnomaly() { return g_lastAnomaly; }
 void screenTextAnomaliesReset() { g_anomalies = 0; g_lastAnomaly[0] = 0; }
@@ -605,62 +577,36 @@ void drawLive(Gfx& g, const WeatherData& d, const ScreenStatus& st) {
   g.clear(COL_PAPER);
   int64_t now = pickNow(d, st);
   int64_t dataEpoch = pickDataEpoch(d, st, now);
-  SmartSlot slot = pickSmartSlot(d, now);
-  drawLiveHeader(g, st, now, dataEpoch);
-  drawCurrent(g, d, slot);
-  rule(g, 242);
-  drawLiveChartBlock(g, d, now);
-  drawLiveInfo(g, d, now);
+  drawLiveHeader(g, st, dataEpoch);
+  drawLiveTop(g, d);
+  Alert a = pickAlert(d);
+  if (a.kind != AlertKind::None) drawAlertBand(g, a);
+  else drawLiveChartBlock(g, d, now);
 }
 
 void drawOvernight(Gfx& g, const WeatherData& d, const ScreenStatus& st, OvernightTitles titles) {
   g.clear(COL_PAPER);
   int64_t now = pickNow(d, st);
   int64_t dataEpoch = pickDataEpoch(d, st, now);
+  drawNightHeader(g);
+  drawNightToday(g, d.today, titles);
+  g.fillRect(451, 80, 2, 144, COL_K);
+  int64_t sunrise = drawNightRight(g, d, now, titles);
 
-  // black header bar
-  g.fillRect(0, 0, PANEL_WIDTH, 56, COL_K);
-  drawHeaderLabel(g, 24, 36, COL_PAPER);
-  drawMoon(g, 526, 28, 12, COL_PAPER, COL_K);
-  char next[64];
-  snprintf(next, sizeof next, "Paused overnight " MID_DOT " next update %d:%02d AM", QUIET_END_HOUR, QUIET_END_MIN);
-  txt(g, 936, 36, next, AtkB20, COL_PAPER, ALIGN_RIGHT);
-
-  // left column title
-  int64_t dateRef = d.today.valid && d.today.lastTime ? (int64_t)d.today.lastTime
-                                                      : (titles == TITLES_TODAY_TOMORROW ? now : now - 86400);
-  struct tm lt;
-  localTm(dateRef, &lt);
-  char dow[8], mon[8], title[48];
-  snprintf(dow, sizeof dow, "%s", dowName(lt.tm_wday)); upperAscii(dow);
-  snprintf(mon, sizeof mon, "%s", monName(lt.tm_mon)); upperAscii(mon);
-  snprintf(title, sizeof title, "%s " MID_DOT " %s %s %d", titles == TITLES_TODAY_TOMORROW ? "TODAY" : "YESTERDAY", dow, mon, lt.tm_mday);
-  txt(g, 28, 92, title, AtkB15, COL_D, ALIGN_LEFT, 2);
-  drawNightRows(g, d.today);
-  drawNightSpark(g, d, st, now, dateRef, titles);
-
-  g.fillRect(461, 76, 2, 424, COL_L);
-
-  int64_t sunrise = 0;
-  drawNightRight(g, d, now, titles, &sunrise);
-
-  // bottom line
-  rule(g, 506);
-  char line[200] = "", item[64], a[16];
+  // footer
+  rule(g, 500);
+  char line[96] = "", item[48], a[16];
+  if (sunrise) { fmtClock(a, sizeof a, sunrise); snprintf(item, sizeof item, "Sunrise %s", a); addItem(line, sizeof line, item); }
   fmtClock(a, sizeof a, dataEpoch);
   snprintf(item, sizeof item, "Last data %s", a);
   addItem(line, sizeof line, item);
-  if (sunrise) { fmtClockShort(a, sizeof a, sunrise); snprintf(item, sizeof item, "Sunrise %s", a); addItem(line, sizeof line, item); }
-  rainTotalsText(item, sizeof item, d, now);
-  addItem(line, sizeof line, item);
-  stationBatteryText(item, sizeof item, d.cur.stationBatteryV);
-  addItem(line, sizeof line, item);
-  drawInfoLine(g, 530, line);
+  static const EFont* const ff[] = {&AtkR22, &AtkR20};
+  txtFit(g, 480, 530, line, ff, 2, 912, COL_K, ALIGN_CENTER);
 }
 
 void drawChargeMe(Gfx& g, const ScreenStatus& st) {
   g.clear(COL_PAPER);
-  drawHeaderLabel(g, 28, 36, COL_D);
+  drawHeaderLabel(g, 28, 36, COL_K);
   g.roundRect(340, 120, 260, 130, 16, COL_K, 8);
   g.fillRoundRect(604, 160, 20, 50, 4, COL_K);
   g.fillRoundRect(356, 136, 22, 98, 3, COL_K);
@@ -668,8 +614,8 @@ void drawChargeMe(Gfx& g, const ScreenStatus& st) {
   char line[96];
   if (st.batteryVolts > 0.5f) snprintf(line, sizeof line, "Battery %.2f V " MID_DOT " weather updates stopped to protect the cell", st.batteryVolts);
   else snprintf(line, sizeof line, "Battery low " MID_DOT " weather updates stopped to protect the cell");
-  static const EFont* const f22[] = {&AtkR22, &AtkR20, &AtkR18};
-  txtFit(g, 480, 396, line, f22, 3, 900, COL_D, ALIGN_CENTER);
+  static const EFont* const f22[] = {&AtkR22, &AtkR20};
+  txtFit(g, 480, 396, line, f22, 2, 900, COL_K, ALIGN_CENTER);
   if (st.lastGoodEpoch > 0) {
     char date[24], clock[16];
     fmtDate(date, sizeof date, st.lastGoodEpoch);
@@ -678,26 +624,26 @@ void drawChargeMe(Gfx& g, const ScreenStatus& st) {
   } else {
     snprintf(line, sizeof line, "No weather data yet");
   }
-  txt(g, 480, 446, line, AtkR20, COL_D, ALIGN_CENTER);
-  txt(g, 480, 476, "Updates restart on their own once the battery is charged.", AtkR20, COL_D, ALIGN_CENTER);
+  txt(g, 480, 446, line, AtkR20, COL_K, ALIGN_CENTER);
+  txt(g, 480, 476, "Updates restart on their own once the battery is charged.", AtkR20, COL_K, ALIGN_CENTER);
 }
 
 void drawError(Gfx& g, const char* reason, const ScreenStatus& st) {
   g.clear(COL_PAPER);
-  drawHeaderLabel(g, 28, 36, COL_D);
+  drawHeaderLabel(g, 28, 36, COL_K);
   drawIcon(g, ICON_CLOUDY, 480, 150, 1.2f);
   g.fillCircle(552, 196, 26, COL_K);
-  txt(g, 552, 208, "!", AtkB32, COL_PAPER, ALIGN_CENTER);
+  txt(g, 552, 207, "!", AtkB28, COL_PAPER, ALIGN_CENTER);
   txt(g, 480, 320, "No weather data", AtkB50, COL_K, ALIGN_CENTER);
-  static const EFont* const rf[] = {&AtkR22, &AtkR20, &AtkR18};
-  txtFit(g, 480, 372, reason && *reason ? reason : "Unknown error", rf, 3, 880, COL_D, ALIGN_CENTER);
+  static const EFont* const rf[] = {&AtkR22, &AtkR20};
+  txtFit(g, 480, 372, reason && *reason ? reason : "Unknown error", rf, 2, 880, COL_K, ALIGN_CENTER);
   if (st.nowEpoch > 0) {
     char date[24], clock[16], line[64];
     fmtDate(date, sizeof date, st.nowEpoch);
     fmtClock(clock, sizeof clock, st.nowEpoch);
     snprintf(line, sizeof line, "%s " MID_DOT " %s", date, clock);
-    txt(g, 480, 420, line, AtkR20, COL_D, ALIGN_CENTER);
+    txt(g, 480, 420, line, AtkR20, COL_K, ALIGN_CENTER);
   }
-  txt(g, 480, 466, "Will try again at the next update.", AtkR20, COL_D, ALIGN_CENTER);
+  txt(g, 480, 466, "Will try again at the next update.", AtkR20, COL_K, ALIGN_CENTER);
   if (st.batteryPercent >= 0) drawBattery(g, 894, 19, st.batteryPercent);
 }
