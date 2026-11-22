@@ -17,6 +17,7 @@
 #include "gfx.h"
 #include "fonts/fonts.h"
 #include "gallery.h"
+#include "scenes.h"
 
 static uint8_t g_fb[PANEL_WIDTH * PANEL_HEIGHT / 2];
 
@@ -139,6 +140,17 @@ int main() {
   galleryPageCharts(pages[3]);
   if (!galleryWrite(pages, 4, "out/gallery.png")) { fprintf(stderr, "failed to write out/gallery.png\n"); return 1; }
   printf("wrote out/gallery.png\n");
+
+  // every screen, rendered from the fixtures at a fixed "now" (deterministic output)
+  Gfx scr;
+  scr.begin(g_fb);
+  for (int i = 0; i < kSceneCount; i++) {
+    char path[96];
+    snprintf(path, sizeof path, "out/%s.png", kScenes[i].name);
+    if (!renderScene(kScenes[i].name, scr)) { fprintf(stderr, "failed to render %s\n", kScenes[i].name); return 1; }
+    if (!writePng(scr, path)) { fprintf(stderr, "failed to write %s\n", path); return 1; }
+    printf("wrote %s\n", path);
+  }
   return 0;
 }
 #endif
