@@ -1,0 +1,524 @@
+<title>Tempest E-ink Layouts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one column of full-width "device" frames, each followed by a short spec. Screen art is single-theme e-ink grey; page chrome follows the viewer theme. */
+:root {
+  --bg: #f3f4f5;
+  --fg: #1d2226;
+  --muted: #5b646c;
+  --rule: #d5d9dd;
+  --bezel: #2a2e31;
+  --accent: #2f6f73;
+  --chip: #e3e8ea;
+  --f-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15191c; --fg: #e4e8eb; --muted: #9aa4ac; --rule: #2c3337; --bezel: #050607; --accent: #7cc1c4; --chip: #222a2e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15191c; --fg: #e4e8eb; --muted: #9aa4ac; --rule: #2c3337; --bezel: #050607; --accent: #7cc1c4; --chip: #222a2e; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 56px; }
+header { display: grid; gap: 10px; }
+h1 { font-family: var(--f-display); font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-size: 24px; margin: 0; text-wrap: balance; }
+.lede { max-width: 68ch; color: var(--muted); margin: 0; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; font-size: 14px; color: var(--muted); }
+.controls label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.controls input { accent-color: var(--accent); width: 16px; height: 16px; }
+section { display: grid; gap: 18px; }
+.device { background: var(--bezel); border-radius: 14px; padding: 18px 18px 30px; max-width: 100%; justify-self: start; width: 100%; box-sizing: border-box; }
+.device svg { display: block; width: 100%; height: auto; border-radius: 2px; }
+body.actual .device { width: calc(104mm + 36px); }
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 32px; }
+.spec > div { min-width: 0; }
+.spec h3 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+.spec p, .spec ul { margin: 0; }
+.spec ul { padding-left: 18px; }
+.tag { display: inline-block; background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 500; }
+h3.sub { font-family: var(--f-display); font-size: 17px; margin: 6px 0 -6px; font-weight: 500; color: var(--muted); }
+h2.divider { border-top: 1px solid var(--rule); padding-top: 32px; color: var(--muted); font-size: 20px; margin-bottom: -24px; }
+.notes { border-top: 1px solid var(--rule); padding-top: 24px; display: grid; gap: 8px; max-width: 72ch; color: var(--muted); }
+.notes p { margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">LilyGo T5 4.7″ · 960 × 540 · 16-level grey</div>
+    <h1>Tempest e-ink display: three layout options</h1>
+    <p class="lede">Each screen below is drawn at the panel's real pixel size, using only the greys the panel can show. The numbers are sample data, not your station's. Big type is Atkinson Hyperlegible, a font designed for low-vision reading, which converts cleanly to the e-paper font format.</p>
+    <div class="controls">
+      <label for="actual"><input type="checkbox" id="actual"> Show at approximate physical size (104 mm wide)</label>
+    </div>
+  </header>
+
+  <section>
+    <div class="eyebrow">Chosen · Option C, extended</div>
+    <h2>Past &amp; Future, with a smart slot</h2>
+    <p class="lede">Two moments on the same layout. The black box on the right is the smart slot: it shows whatever matters most right now. The line along the bottom adds sun times, dew point, rain totals and station health.</p>
+    <h3 class="sub">A quiet afternoon</h3>
+    <div class="device"><svg id="optC2a" viewBox="0 0 960 540" role="img" aria-label="Option C extended, calm afternoon"></svg></div>
+    <h3 class="sub">An evening thunderstorm</h3>
+    <div class="device"><svg id="optC2b" viewBox="0 0 960 540" role="img" aria-label="Option C extended, thunderstorm evening"></svg></div>
+    <div class="spec">
+      <div><h3>Smart slot priority</h3><ul><li>Lightning in the last 3 h: strike count and nearest distance</li><li>Raining now: rain rate</li><li>UV 6 or higher: UV warning</li><li>Otherwise: when the forecast says rain is next</li></ul></div>
+      <div><h3>New on the chart</h3><ul><li>Lightning row: a bolt and strike count under each hour with strikes</li><li>Rain bars auto-scale, so a downpour and a drizzle both read well</li></ul></div>
+      <div><h3>Bottom line</h3><p>Sunrise and sunset, dew point, rain this month and this year, and station battery. Wind now shows gusts under the speed.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Overnight · 10 PM to 5 AM</div>
+    <h2>Overnight summary</h2>
+    <p class="lede">The 10 PM update draws this screen instead of the live one, then the board sleeps until 5 AM. The black header bar and the moon make it obvious from across the room that nothing on it is live. It shows how today went and what tomorrow's forecast says.</p>
+    <div class="device"><svg id="optNight" viewBox="0 0 960 540" role="img" aria-label="Overnight summary screen"></svg></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Low battery · below 3.3 V</div>
+    <h2>Charge me</h2>
+    <p class="lede">When the 18650 drops below 3.3 V, the board draws this screen and stops connecting to WiFi. Every two hours it wakes for a fraction of a second to check the voltage, and returns to normal once the battery is charged.</p>
+    <div class="device"><svg id="optCharge" viewBox="0 0 960 540" role="img" aria-label="Charge me screen"></svg></div>
+  </section>
+
+  <h2 class="divider">The original three options</h2>
+
+  <section>
+    <div class="eyebrow">Option A</div>
+    <h2>Big &amp; Simple</h2>
+    <div class="device"><svg id="optA" viewBox="0 0 960 540" role="img" aria-label="Option A mockup"></svg></div>
+    <div class="spec">
+      <div><h3>Idea</h3><p>One huge temperature you can read from across the room, four key readings, and one 24-hour chart of temperature and rain.</p></div>
+      <div><h3>Shows</h3><ul><li>Now: temp, feels-like, high/low, conditions</li><li>Wind, rain today, humidity, pressure trend</li><li>Last 24 h: temperature line + hourly rain bars</li></ul></div>
+      <div><h3>Trade-off</h3><p>No multi-day forecast. Most readable of the three. <span class="tag">Easiest to build</span></p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Option B</div>
+    <h2>Tile Dashboard</h2>
+    <div class="device"><svg id="optB" viewBox="0 0 960 540" role="img" aria-label="Option B mockup"></svg></div>
+    <div class="spec">
+      <div><h3>Idea</h3><p>Six sensor tiles, each with a large reading and its own 24-hour sparkline, over a 5-day forecast strip.</p></div>
+      <div><h3>Shows</h3><ul><li>Temp, wind, rain, humidity, pressure, sun/UV</li><li>A trend line for every sensor</li><li>5-day forecast: icon, high/low, rain chance</li></ul></div>
+      <div><h3>Trade-off</h3><p>Shows the most data. Numbers are smaller (about 56 px), so it reads best within a couple of metres.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Option C</div>
+    <h2>Past &amp; Future Timeline</h2>
+    <div class="device"><svg id="optC" viewBox="0 0 960 540" role="img" aria-label="Option C mockup"></svg></div>
+    <div class="spec">
+      <div><h3>Idea</h3><p>A wide 48-hour chart: what your station measured over the last 24 hours, joined at "now" to the Tempest forecast for the next 24.</p></div>
+      <div><h3>Shows</h3><ul><li>Now: temp and four key readings</li><li>Observed temp (solid) and forecast temp (dashed), with highs and lows labelled</li><li>Measured rain (black bars) and rain chance (grey bars)</li></ul></div>
+      <div><h3>Trade-off</h3><p>The most distinctive chart. Uses the Tempest forecast API on top of station history. <span class="tag">Most data per glance</span></p></div>
+    </div>
+  </section>
+
+  <div class="notes">
+    <p>Pieces can be mixed: for example A's header with C's chart, or B's forecast strip under A.</p>
+    <p>E-ink note: grey fills render as true greys on this panel. Lines are at least 2 px wide so they stay crisp, and nothing relies on colour.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---------- e-ink palette (4-bit grey levels) ----------
+  const K = '#1b1b1b', D = '#4a4a4a', M = '#888888', L = '#bdbdbd', XL = '#d9d9d5', P = '#ecece7';
+  const F = "'Atkinson Hyperlegible', 'Segoe UI', sans-serif";
+
+  // ---------- sample data (deterministic) ----------
+  const NOW_HOUR = 14; // 2 PM
+  const past = [], future = [], rainPast = [], pop = [], wind = [], hum = [], pres = [], solar = [];
+  for (let i = 0; i <= 24; i++) {
+    const hd = (NOW_HOUR - 24 + i + 24) % 24;
+    past.push(60 + 9 * Math.sin(2 * Math.PI * (hd - 8) / 24) + 0.7 * Math.sin(i * 1.7));
+    rainPast.push([0, 0, 0.02, 0.05, 0.03, 0.02][hd] ? [0, 0, 0.02, 0.05, 0.03, 0.02][hd] : 0);
+    wind.push(5 + 3 * Math.sin(i / 3.5) + (i > 18 ? 2 : 0));
+    hum.push(78 - 20 * Math.sin(2 * Math.PI * (hd - 8) / 24));
+    pres.push(30.12 - i * 0.004);
+    solar.push(Math.max(0, 600 * Math.sin(Math.PI * (hd - 7) / 10)));
+  }
+  past[24] = 68.4;
+  for (let k = 0; k <= 24; k++) {
+    const hd = (NOW_HOUR + k) % 24;
+    future.push(57.5 + 8 * Math.sin(2 * Math.PI * (hd - 8) / 24) - 4 * (k / 24) + (k === 0 ? 68.4 - 65.5 : 0) * 0);
+    pop.push(k < 9 ? 10 : k < 13 ? 25 : k < 17 ? 55 : 65);
+  }
+  future[0] = 68.4;
+  const days = [
+    { d: 'Today', hi: 71, lo: 52, icon: 'partly', pop: 10 },
+    { d: 'Sun', hi: 62, lo: 50, icon: 'rain', pop: 65 },
+    { d: 'Mon', hi: 58, lo: 45, icon: 'cloud', pop: 20 },
+    { d: 'Tue', hi: 62, lo: 44, icon: 'sun', pop: 0 },
+    { d: 'Wed', hi: 66, lo: 48, icon: 'sun', pop: 0 }
+  ];
+
+  // ---------- svg helpers ----------
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function T(x, y, s, size, o = {}) {
+    return `<text x="${x}" y="${y}" font-family="${F}" font-size="${size}" font-weight="${o.w || 400}" fill="${o.fill || K}" text-anchor="${o.a || 'start'}"${o.ls ? ` letter-spacing="${o.ls}"` : ''}>${o.raw ? s : esc(s)}</text>`;
+  }
+  const R = (x, y, w, h, fill, o = {}) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"${o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw || 2}"` : ''}${o.rx ? ` rx="${o.rx}"` : ''}/>`;
+  const Ln = (x1, y1, x2, y2, c = K, w = 2, dash) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  function pts(data, x, y, w, h, min, max) {
+    return data.map((v, i) => [x + (i / (data.length - 1)) * w, y + h - ((v - min) / (max - min)) * h]);
+  }
+  const poly = (p, c = K, w = 3, dash) => `<polyline points="${p.map(q => q.map(n => n.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  const area = (p, base, fill) => `<polygon points="${p[0][0].toFixed(1)},${base} ${p.map(q => q.map(n => n.toFixed(1)).join(',')).join(' ')} ${p[p.length - 1][0].toFixed(1)},${base}" fill="${fill}"/>`;
+
+  // ---------- icons ----------
+  const cloudPath = 'M -40 20 A 20 20 0 0 1 -40 -20 A 28 28 0 0 1 12 -30 A 18 18 0 0 1 40 -8 A 14 14 0 0 1 40 20 Z';
+  function sun(cx, cy, r, sw = 3) {
+    let s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${P}" stroke="${K}" stroke-width="${sw}"/>`;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4, r1 = r * 1.4, r2 = r * 1.85;
+      s += Ln(cx + r1 * Math.cos(a), cy + r1 * Math.sin(a), cx + r2 * Math.cos(a), cy + r2 * Math.sin(a), K, sw);
+    }
+    return s;
+  }
+  const cloud = (cx, cy, sc, fill = P, sw = 3) => `<path d="${cloudPath}" transform="translate(${cx} ${cy}) scale(${sc})" fill="${fill}" stroke="${K}" stroke-width="${sw / sc}" stroke-linejoin="round"/>`;
+  function icon(kind, cx, cy, sc) {
+    if (kind === 'sun') return sun(cx, cy, 22 * sc, Math.max(2, 3 * sc));
+    if (kind === 'cloud') return cloud(cx, cy, sc, XL, Math.max(2, 3 * sc));
+    if (kind === 'partly') return sun(cx - 18 * sc, cy - 18 * sc, 18 * sc, Math.max(2, 3 * sc)) + cloud(cx + 6 * sc, cy + 8 * sc, sc * 0.85, P, Math.max(2, 3 * sc));
+    if (kind === 'rain') {
+      let s = cloud(cx, cy - 8 * sc, sc, M, Math.max(2, 3 * sc));
+      for (let i = -1; i <= 1; i++) s += Ln(cx + i * 22 * sc, cy + 22 * sc, cx + i * 22 * sc - 8 * sc, cy + 40 * sc, K, Math.max(2, 3 * sc));
+      return s;
+    }
+  }
+  function battery(x, y, pct, c = K) {
+    return R(x, y, 34, 16, 'none', { stroke: c, sw: 2, rx: 2 }) + R(x + 34, y + 5, 3, 6, c) + R(x + 3, y + 3, 28 * pct, 10, c);
+  }
+  const hourLabel = h => { const hh = ((h % 24) + 24) % 24; return (hh % 12 || 12) + (hh < 12 ? ' AM' : ' PM'); };
+
+  // ---------- Option A ----------
+  function optA() {
+    let s = R(0, 0, 960, 540, P);
+    s += T(28, 36, 'BACKYARD', 20, { w: 700, ls: 3 });
+    s += T(876, 36, 'Sat, Nov 21 · 2:05 PM', 22, { a: 'end', fill: D });
+    s += battery(894, 21, 0.8);
+    s += Ln(24, 52, 936, 52, K, 2);
+    // current
+    s += icon('partly', 110, 168, 1.5);
+    s += T(205, 252, '68°', 172, { w: 700 });
+    s += T(36, 306, 'Partly cloudy', 32, { w: 700 });
+    s += T(36, 344, 'Feels 67°   ·   H 71°   L 52°', 26, { fill: D });
+    s += Ln(500, 72, 500, 340, L, 2);
+    // 2x2 stats
+    const stats = [
+      ['WIND', '8', 'mph', 'WNW · gusts 14'],
+      ['RAIN TODAY', '0.12', 'in', '0.31 in this week'],
+      ['HUMIDITY', '54', '%', 'dew point 51°'],
+      ['PRESSURE', '30.02', 'in', 'falling ↓']
+    ];
+    stats.forEach((st, i) => {
+      const x = 532 + (i % 2) * 212, y = 72 + Math.floor(i / 2) * 140;
+      s += T(x, y + 18, st[0], 16, { w: 700, fill: D, ls: 2 });
+      s += T(x, y + 76, `${esc(st[1])}<tspan font-size="24" font-weight="400" dx="6">${st[2]}</tspan>`, 60, { w: 700, raw: true });
+      s += T(x, y + 108, st[3], 20, { fill: D });
+    });
+    s += Ln(24, 364, 936, 364, K, 2);
+    // chart
+    const cx = 72, cy = 398, cw = 852, ch = 104;
+    s += T(28, 388, 'LAST 24 HOURS', 15, { w: 700, fill: D, ls: 2 });
+    s += Ln(782, 382, 806, 382, K, 4) + T(812, 388, 'Temp', 15, { fill: D });
+    s += R(866, 375, 12, 13, M) + T(884, 388, 'Rain', 15, { fill: D });
+    [0, 0.5, 1].forEach(f => s += Ln(cx, cy + ch * f, cx + cw, cy + ch * f, XL, 1));
+    // rain bars
+    const bw = cw / 24;
+    rainPast.forEach((r, i) => { if (r > 0 && i < 24) { const h = (r / 0.06) * ch; s += R(cx + i * bw + 3, cy + ch - h, bw - 6, h, M); } });
+    const p = pts(past, cx, cy, cw, ch, 50, 72);
+    s += area(p, cy + ch, XL) + poly(p, K, 4);
+    s += `<circle cx="${p[24][0]}" cy="${p[24][1]}" r="6" fill="${K}"/>`;
+    s += T(cx - 10, cy + 8, '72°', 16, { a: 'end', fill: D }) + T(cx - 10, cy + ch + 4, '50°', 16, { a: 'end', fill: D });
+    [0, 6, 12, 18, 24].forEach(i => s += T(cx + i * bw, 530, i === 24 ? 'Now' : hourLabel(NOW_HOUR - 24 + i), 16, { a: i === 0 ? 'start' : i === 24 ? 'end' : 'middle', fill: D, w: i === 24 ? 700 : 400 }));
+    return s;
+  }
+
+  // ---------- Option B ----------
+  function optB() {
+    let s = R(0, 0, 960, 540, P);
+    s += R(0, 0, 960, 52, K);
+    s += T(24, 35, 'Backyard Station', 24, { w: 700, fill: P });
+    s += T(880, 35, 'Sat, Nov 21 · 2:05 PM', 22, { a: 'end', fill: P });
+    s += battery(898, 18, 0.8, P);
+    const tiles = [
+      ['TEMPERATURE', '68°', '', 'H 71°  ·  L 52°', past, 'line'],
+      ['WIND', '8', 'mph', 'WNW · gusts 14', wind, 'line'],
+      ['RAIN', '0.12', 'in', 'today · 0.31 week', rainPast.slice(0, 24), 'bar'],
+      ['HUMIDITY', '54', '%', 'dew point 51°', hum, 'line'],
+      ['PRESSURE', '30.02', 'inHg', 'falling ↓', pres, 'line'],
+      ['SUN', 'UV 3', '', '412 W/m²', solar, 'area']
+    ];
+    const tw = 301, th = 160;
+    tiles.forEach((t, i) => {
+      const x = 16 + (i % 3) * (tw + 12), y = 64 + Math.floor(i / 3) * (th + 10);
+      s += R(x, y, tw, th, P, { stroke: K, sw: 2, rx: 8 });
+      s += T(x + 16, y + 28, t[0], 15, { w: 700, fill: D, ls: 2 });
+      s += T(x + 16, y + 96, `${esc(t[1])}${t[2] ? `<tspan font-size="22" font-weight="400" dx="4">${t[2]}</tspan>` : ''}`, 56, { w: 700, raw: true });
+      s += T(x + 16, y + 140, t[3], 18, { fill: D });
+      // sparkline
+      const sx = x + 176, sy = y + 52, sw = 108, sh = 66;
+      const data = t[4], mn = Math.min(...data), mx = Math.max(...data);
+      s += Ln(sx, sy + sh, sx + sw, sy + sh, L, 1);
+      if (t[5] === 'bar') {
+        const bw = sw / data.length; data.forEach((v, j) => { if (v > 0) { const h = v / 0.06 * sh; s += R(sx + j * bw + 0.5, sy + sh - h, bw - 1, h, D); } });
+      } else {
+        const p = pts(data, sx, sy, sw, sh, mn - (mx - mn) * 0.1, mx + (mx - mn) * 0.1);
+        if (t[5] === 'area') s += area(p, sy + sh, L);
+        s += poly(p, K, 2.5) + `<circle cx="${p[p.length - 1][0]}" cy="${p[p.length - 1][1]}" r="4" fill="${K}"/>`;
+      }
+      s += T(sx + sw, y + 140, '24 h', 13, { a: 'end', fill: M });
+    });
+    // forecast strip
+    s += Ln(16, 404, 944, 404, K, 2);
+    days.forEach((d, i) => {
+      const cw = 928 / 5, x = 16 + i * cw, mid = x + cw / 2;
+      if (i) s += Ln(x, 416, x, 528, L, 1);
+      s += T(mid, 432, d.d, 20, { a: 'middle', w: 700 });
+      s += icon(d.icon, mid - 26, 472, 0.55);
+      s += T(mid + 22, 466, `${d.hi}°`, 24, { w: 700 }) + T(mid + 22, 492, `${d.lo}°`, 20, { fill: D });
+      s += T(mid, 526, d.pop >= 20 ? `${d.pop}% rain` : ' ', 16, { a: 'middle', fill: D });
+    });
+    return s;
+  }
+
+  // ---------- Option C ----------
+  function optC() {
+    let s = R(0, 0, 960, 540, P);
+    s += T(28, 36, 'BACKYARD', 20, { w: 700, ls: 3 });
+    s += T(876, 36, 'Sat, Nov 21 · 2:05 PM', 22, { a: 'end', fill: D });
+    s += battery(894, 21, 0.8);
+    s += Ln(24, 52, 936, 52, K, 2);
+    s += icon('partly', 92, 138, 1.15);
+    s += T(168, 202, '68°', 150, { w: 700 });
+    s += T(36, 246, 'Partly cloudy  ·  feels 67°', 24, { fill: D });
+    const stats = [['WIND', '8', 'mph WNW'], ['RAIN TODAY', '0.12', 'in'], ['HUMIDITY', '54', '%'], ['PRESSURE', '30.02', '↓']];
+    stats.forEach((st, i) => {
+      const x = 524 + (i % 2) * 212, y = 70 + Math.floor(i / 2) * 92;
+      s += T(x, y + 16, st[0], 15, { w: 700, fill: D, ls: 2 });
+      s += T(x, y + 64, `${esc(st[1])}<tspan font-size="20" font-weight="400" dx="6">${esc(st[2])}</tspan>`, 46, { w: 700, raw: true });
+    });
+    s += Ln(24, 262, 936, 262, K, 2);
+    // chart
+    const cx = 60, cy = 296, cw = 870, ch = 140, half = cw / 2, nowX = cx + half;
+    const mn = 46, mx = 74;
+    s += T(cx + 4, 286, 'MEASURED · last 24 h', 15, { w: 700, fill: D, ls: 1.5 });
+    s += T(cx + cw - 4, 286, 'FORECAST · next 24 h', 15, { w: 700, fill: D, ls: 1.5, a: 'end' });
+    [50, 60, 70].forEach(v => { const y = cy + ch - (v - mn) / (mx - mn) * ch; s += Ln(cx, y, cx + cw, y, XL, 1) + T(cx - 8, y + 5, `${v}°`, 15, { a: 'end', fill: D }); });
+    s += R(nowX, cy - 4, half, ch + 70, '#e3e3de');
+    const pp = pts(past, cx, cy, half, ch, mn, mx), fp = pts(future, nowX, cy, half, ch, mn, mx);
+    s += area(pp, cy + ch, XL) + poly(pp, K, 4) + poly(fp, K, 3.5, '10 7');
+    s += Ln(nowX, cy - 6, nowX, cy + ch + 64, K, 2);
+    s += `<circle cx="${nowX}" cy="${pp[24][1]}" r="7" fill="${K}"/>`;
+    // hi/lo labels
+    function mark(arr, p, fn, above) {
+      let idx = 0; arr.forEach((v, i) => { if (fn(v, arr[idx])) idx = i; });
+      if (idx === 0 || idx === arr.length - 1) return '';
+      return `<circle cx="${p[idx][0]}" cy="${p[idx][1]}" r="4" fill="${K}"/>` + T(p[idx][0], p[idx][1] + (above ? -12 : 26), `${Math.round(arr[idx])}°`, 20, { a: 'middle', w: 700 });
+    }
+    s += mark(past, pp, (a, b) => a < b, false) + mark(future, fp, (a, b) => a < b, false) + mark(future, fp, (a, b) => a > b, true);
+    // rain band
+    const ry = cy + ch + 14, rh = 48, bw = half / 24;
+    s += Ln(cx, ry + rh, cx + cw, ry + rh, L, 1);
+    rainPast.forEach((r, i) => { if (r > 0 && i < 24) { const h = r / 0.05 * rh; s += R(cx + i * bw + 2, ry + rh - h, bw - 4, h, K); } });
+    pop.forEach((v, k) => { if (k < 24) { const h = v / 100 * rh; s += R(nowX + k * bw + 2, ry + rh - h, bw - 4, h, M); } });
+    s += T(cx - 8, ry + rh - 2, 'rain', 14, { a: 'end', fill: D });
+    s += T(cx + 2 * bw, ry + 14, '0.12 in overnight', 15, { fill: D });
+    s += T(cx + cw - 4, ry + 14, '65% chance Sun AM', 15, { fill: D, a: 'end' });
+    [0, 6, 12, 18, 24, 30, 36, 42, 48].forEach(i => {
+      const x = cx + i * bw, lbl = i === 24 ? 'NOW' : hourLabel(NOW_HOUR - 24 + i);
+      s += T(x, 524, lbl, 16, { a: i === 0 ? 'start' : i === 48 ? 'end' : 'middle', fill: i === 24 ? K : D, w: i === 24 ? 700 : 400 });
+    });
+    return s;
+  }
+
+  // ---------- Option C extended ----------
+  const bolt = (x, y, sc, fill) => `<path d="M 1 -10 L -6 1 L -1 1 L -3 10 L 6 -2 L 1 -2 L 3 -10 Z" transform="translate(${x} ${y}) scale(${sc})" fill="${fill}"/>`;
+  function stormIcon(cx, cy, sc) {
+    return cloud(cx, cy - 8 * sc, sc, M, 3) + bolt(cx + 2 * sc, cy + 30 * sc, 2.2 * sc, K);
+  }
+
+  const calm = {
+    time: 'Sat, Nov 21 · Updated 2:00 PM', nowHour: 14, past, future, rain: rainPast.slice(0, 24), pop: pop.slice(0, 24),
+    strikes: new Array(24).fill(0), temp: '68°', cond: 'Partly cloudy  ·  feels 67°', icon: 'partly',
+    stats: [['WIND', '8', 'mph', 'WNW · gusts 14'], ['RAIN TODAY', '0.12', 'in', 'yesterday 0.00'], ['HUMIDITY', '54', '%', 'dew point 51°'], ['PRESSURE', '30.02', 'in', 'falling ↓']],
+    slot: { label: 'NEXT RAIN', big: 'Sun', sub1: '8 AM', sub2: '65% chance', kind: 'rain' },
+    rainNote: '0.12 in overnight', popNote: '65% chance Sun AM',
+    info: 'Sunrise 6:58  ·  Sunset 4:52  ·  UV 3  ·  Rain Nov 2.41 in  ·  2026 31.6 in  ·  Station battery OK'
+  };
+
+  // storm scenario: now = 8 PM
+  const sPast = [], sRain = [], sStr = [], sFut = [], sPop = [];
+  for (let i = 0; i <= 24; i++) {
+    const hd = (20 - 24 + i + 24) % 24;
+    sPast.push(63 + 9 * Math.sin(2 * Math.PI * (hd - 9) / 24) + 0.5 * Math.sin(i * 1.3));
+  }
+  [64.5, 62, 62.6, 63].forEach((v, j) => sPast[21 + j] = v);
+  for (let i = 0; i < 24; i++) { sRain.push({ 21: 0.15, 22: 0.32, 23: 0.18 }[i] || 0); sStr.push({ 19: 3, 20: 14, 21: 9, 22: 2 }[i] || 0); }
+  for (let k = 0; k <= 24; k++) {
+    const hd = (20 + k) % 24;
+    sFut.push(56 + 5 * Math.sin(2 * Math.PI * (hd - 9) / 24) - 2 * (k / 24));
+    sPop.push(k < 2 ? 70 : k < 4 ? 45 : k < 6 ? 20 : 10);
+  }
+  sFut[0] = 63; sFut[1] = 61;
+  const storm = {
+    time: 'Sat, Nov 21 · Updated 8:00 PM', nowHour: 20, past: sPast, future: sFut, rain: sRain, pop: sPop.slice(0, 24),
+    strikes: sStr, temp: '63°', cond: 'Thunderstorm  ·  feels 63°', icon: 'storm',
+    stats: [['WIND', '18', 'mph', 'SW · gusts 31'], ['RAIN TODAY', '0.65', 'in', '0.41 in/hr now'], ['HUMIDITY', '91', '%', 'dew point 60°'], ['PRESSURE', '29.84', 'in', 'rising ↑']],
+    slot: { label: 'LIGHTNING', big: '28', sub1: 'strikes · 3 h', sub2: 'nearest 3 mi', kind: 'bolt' },
+    rainNote: '0.65 in since 5 PM', popNote: 'clearing after midnight',
+    info: 'Sunrise 6:58  ·  Sunset 4:52  ·  UV 0  ·  Rain Nov 3.06 in  ·  2026 32.2 in  ·  Station battery OK'
+  };
+
+  function optC2(sc) {
+    let s = R(0, 0, 960, 540, P);
+    s += T(28, 34, 'HIGHGARDEN - STARK ST. TEMPEST', 18, { w: 700, ls: 2 });
+    s += T(876, 34, sc.time, 22, { a: 'end', fill: D });
+    s += battery(894, 19, 0.8);
+    s += Ln(24, 48, 936, 48, K, 2);
+    // current
+    s += sc.icon === 'storm' ? stormIcon(82, 118, 1.0) : icon(sc.icon, 82, 122, 1.0);
+    s += T(146, 184, sc.temp, 136, { w: 700 });
+    s += T(32, 226, sc.cond, 22, { fill: D });
+    // 2x2 stats
+    sc.stats.forEach((st, i) => {
+      const x = 486 + (i % 2) * 154, y = 60 + Math.floor(i / 2) * 88;
+      s += T(x, y + 15, st[0], 14, { w: 700, fill: D, ls: 1.5 });
+      s += T(x, y + 56, `${esc(st[1])}<tspan font-size="18" font-weight="400" dx="4">${st[2]}</tspan>`, 42, { w: 700, raw: true });
+      s += T(x, y + 79, st[3], 16, { fill: D });
+    });
+    // smart slot
+    const sx = 798, sy = 60, sw = 138, sh = 172;
+    s += R(sx, sy, sw, sh, K, { rx: 8 });
+    s += T(sx + sw / 2, sy + 26, sc.slot.label, 14, { w: 700, fill: P, ls: 1.5, a: 'middle' });
+    if (sc.slot.kind === 'bolt') s += bolt(sx + 30, sy + 76, 2.4, P);
+    else for (let i = 0; i < 3; i++) s += Ln(sx + 22 + i * 12, sy + 62, sx + 16 + i * 12, sy + 84, P, 3);
+    s += T(sx + 54, sy + 94, sc.slot.big, 50, { w: 700, fill: P });
+    s += T(sx + sw / 2, sy + 132, sc.slot.sub1, 17, { fill: P, a: 'middle', w: 700 });
+    s += T(sx + sw / 2, sy + 156, sc.slot.sub2, 16, { fill: '#cfcfca', a: 'middle' });
+    s += Ln(24, 242, 936, 242, K, 2);
+    // chart
+    const cx = 60, cy = 274, cw = 870, ch = 112, half = cw / 2, nowX = cx + half, bw = half / 24;
+    const all = sc.past.concat(sc.future);
+    const mn = Math.floor((Math.min(...all) - 3) / 5) * 5, mx = Math.ceil((Math.max(...all) + 3) / 5) * 5;
+    s += T(cx + 4, 264, 'MEASURED · last 24 h', 14, { w: 700, fill: D, ls: 1.5 });
+    s += T(cx + cw - 4, 264, 'FORECAST · next 24 h', 14, { w: 700, fill: D, ls: 1.5, a: 'end' });
+    s += R(nowX, cy - 4, half, 196, '#e3e3de');
+    const step = (mx - mn) > 20 ? 10 : 5;
+    for (let v = mn + step; v < mx; v += step) { const y = cy + ch - (v - mn) / (mx - mn) * ch; s += Ln(cx, y, cx + cw, y, XL, 1) + T(cx - 8, y + 5, `${v}°`, 15, { a: 'end', fill: D }); }
+    const pp = pts(sc.past, cx, cy, half, ch, mn, mx), fp = pts(sc.future, nowX, cy, half, ch, mn, mx);
+    s += area(pp, cy + ch, XL) + poly(pp, K, 4) + poly(fp, K, 3.5, '10 7');
+    s += Ln(nowX, cy - 6, nowX, cy + 196, K, 2);
+    s += `<circle cx="${nowX}" cy="${pp[24][1]}" r="7" fill="${K}"/>`;
+    function mark(arr, p, fn, above) {
+      let idx = 0; arr.forEach((v, i) => { if (fn(v, arr[idx])) idx = i; });
+      if (idx <= 1 || idx >= arr.length - 2) return '';
+      return `<circle cx="${p[idx][0]}" cy="${p[idx][1]}" r="4" fill="${K}"/>` + T(p[idx][0], p[idx][1] + (above ? -12 : 24), `${Math.round(arr[idx])}°`, 19, { a: 'middle', w: 700 });
+    }
+    s += mark(sc.past, pp, (a, b) => a > b, true) + mark(sc.past, pp, (a, b) => a < b, false) + mark(sc.future, fp, (a, b) => a < b, false) + mark(sc.future, fp, (a, b) => a > b, true);
+    // rain band (auto-scaled)
+    const ry = cy + ch + 10, rh = 40, rmax = Math.max(0.05, ...sc.rain);
+    s += Ln(cx, ry + rh, cx + cw, ry + rh, L, 1);
+    sc.rain.forEach((r, i) => { if (r > 0) { const h = Math.max(3, r / rmax * rh); s += R(cx + i * bw + 2, ry + rh - h, bw - 4, h, K); } });
+    sc.pop.forEach((v, k) => { const h = v / 100 * rh; s += R(nowX + k * bw + 2, ry + rh - h, bw - 4, h, M); });
+    s += T(cx - 8, ry + rh - 2, 'rain', 14, { a: 'end', fill: D });
+    s += T(cx + 2 * bw, ry + 14, sc.rainNote, 15, { fill: D });
+    s += T(cx + cw - 4, ry + 14, sc.popNote, 15, { fill: D, a: 'end' });
+    // lightning row
+    const ly = ry + rh + 16;
+    s += T(cx - 8, ly + 5, 'strikes', 14, { a: 'end', fill: D });
+    const any = sc.strikes.some(v => v > 0);
+    if (!any) s += T(cx + 2 * bw, ly + 6, 'no lightning in 24 h', 14, { fill: M });
+    sc.strikes.forEach((n, i) => { if (n > 0) { const x = cx + i * bw + bw / 2; s += bolt(x, ly - 2, 0.8, K) + T(x, ly + 20, n, 13, { w: 700, a: 'middle' }); } });
+    // time axis
+    [0, 6, 12, 18, 24, 30, 36, 42, 48].forEach(i => {
+      const x = cx + i * bw, lbl = i === 24 ? 'NOW' : hourLabel(sc.nowHour - 24 + i);
+      s += T(x, 494, lbl, 15, { a: i === 0 ? 'start' : i === 48 ? 'end' : 'middle', fill: i === 24 ? K : D, w: i === 24 ? 700 : 400 });
+    });
+    // info line
+    s += Ln(24, 504, 936, 504, K, 2);
+    s += T(480, 529, sc.info, 17, { a: 'middle', fill: K });
+    return s;
+  }
+  // ---------- Overnight summary ----------
+  const moon = (cx, cy, r, fg, bg) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fg}"/><circle cx="${cx + r * 0.45}" cy="${cy - r * 0.3}" r="${r * 0.85}" fill="${bg}"/>`;
+  function optNight() {
+    let s = R(0, 0, 960, 540, P);
+    s += R(0, 0, 960, 56, K);
+    s += T(24, 36, 'HIGHGARDEN - STARK ST. TEMPEST', 18, { w: 700, ls: 2, fill: P });
+    s += moon(526, 28, 12, P, K);
+    s += T(936, 36, 'Paused overnight · next update 5:00 AM', 20, { a: 'end', fill: P, w: 700 });
+    // today column
+    s += T(28, 92, 'TODAY · SAT NOV 21', 15, { w: 700, fill: D, ls: 2 });
+    const rows = [['High', '2:40 PM', '71°'], ['Low', '6:10 AM', '52°'], ['Rain', '', '0.12 in'], ['Peak gust', '11:20 AM', '22 mph'], ['Lightning', '', 'none'], ['At 10 PM', 'last reading', '58°']];
+    rows.forEach((r, i) => {
+      const y = 140 + i * 46;
+      s += T(28, y, r[0], 22, { w: 700 }) + (r[1] ? T(150, y, r[1], 17, { fill: D }) : '');
+      s += T(430, y + 2, r[2], 32, { w: 700, a: 'end' });
+      if (i < rows.length - 1) s += Ln(28, y + 16, 430, y + 16, XL, 1);
+    });
+    // today's temp sparkline
+    const today = []; for (let h = 0; h <= 22; h++) today.push(60 + 9 * Math.sin(2 * Math.PI * (h - 8) / 24) + 0.6 * Math.sin(h * 1.9));
+    s += T(28, 420, "Today's temperature", 15, { fill: D });
+    const tp = pts(today, 28, 430, 402, 50, 48, 72);
+    s += area(tp, 480, XL) + poly(tp, K, 3);
+    ['12 AM', '6 AM', '12 PM', '6 PM'].forEach((l, i) => s += T(28 + (i * 6 / 22) * 402, 498, l, 14, { fill: D, a: i ? 'middle' : 'start' }));
+    s += T(430, 498, '10 PM', 14, { fill: D, a: 'end' });
+    s += Ln(462, 76, 462, 500, L, 2);
+    // tomorrow column
+    s += T(492, 92, 'TOMORROW · SUN NOV 22', 15, { w: 700, fill: D, ls: 2 });
+    s += icon('rain', 548, 160, 0.95);
+    s += T(616, 186, '62°', 84, { w: 700 }) + T(760, 186, '/ 50°', 44, { fill: D });
+    s += T(492, 236, 'Rain likely, mostly before noon', 22, { w: 700 });
+    s += T(492, 264, '65% chance · breezy, gusts to 25 mph', 18, { fill: D });
+    const tom = [], tpop = [];
+    for (let k = 0; k <= 17; k++) { const h = 5 + k; tom.push(50 + 12 * Math.sin(Math.PI * (h - 5) / 18) - (h > 14 ? (h - 14) * 0.4 : 0)); tpop.push(h < 12 ? 65 - (h - 5) * 2 : h < 15 ? 30 : 15); }
+    const cx = 530, cy = 292, cw = 400, ch = 100;
+    [50, 55, 60].forEach(v => { const y = cy + ch - (v - 46) / (66 - 46) * ch; s += Ln(cx, y, cx + cw, y, XL, 1) + T(cx - 6, y + 5, `${v}°`, 14, { a: 'end', fill: D }); });
+    const fp = pts(tom, cx, cy, cw, ch, 46, 66);
+    s += poly(fp, K, 3.5, '10 7');
+    let hi = 0; tom.forEach((v, i) => { if (v > tom[hi]) hi = i; });
+    s += `<circle cx="${fp[hi][0]}" cy="${fp[hi][1]}" r="4" fill="${K}"/>` + T(fp[hi][0], fp[hi][1] - 12, `${Math.round(tom[hi])}°`, 18, { w: 700, a: 'middle' });
+    const ry = cy + ch + 10, rh = 36, bw = cw / 18;
+    s += Ln(cx, ry + rh, cx + cw, ry + rh, L, 1);
+    tpop.forEach((v, k) => { const h = v / 100 * rh; s += R(cx + k * bw + 2, ry + rh - h, bw - 4, h, M); });
+    s += T(cx - 6, ry + rh - 2, 'rain %', 13, { a: 'end', fill: D });
+    ['5 AM', '9 AM', '1 PM', '5 PM', '9 PM'].forEach((l, i) => s += T(cx + (i * 4 / 17) * cw, 470, l, 14, { fill: D, a: i ? 'middle' : 'start' }));
+    // bottom line
+    s += Ln(24, 506, 936, 506, K, 2);
+    s += T(480, 530, 'Last data 10:00 PM  ·  Sunrise 6:59  ·  Rain Nov 2.41 in  ·  2026 31.6 in  ·  Station battery OK', 17, { a: 'middle' });
+    return s;
+  }
+
+  // ---------- Charge me ----------
+  function optCharge() {
+    let s = R(0, 0, 960, 540, P);
+    s += T(28, 36, 'HIGHGARDEN - STARK ST. TEMPEST', 18, { w: 700, ls: 2, fill: D });
+    s += R(340, 120, 260, 130, P, { stroke: K, sw: 8, rx: 16 }) + R(604, 160, 20, 50, K, { rx: 4 });
+    s += R(356, 136, 22, 98, K, { rx: 3 });
+    s += T(480, 350, 'Charge me', 76, { w: 700, a: 'middle' });
+    s += T(480, 396, 'Battery 3.28 V · weather updates stopped to protect the cell', 22, { a: 'middle', fill: D });
+    s += T(480, 446, 'Last data: Sat, Nov 21 · 3:30 PM', 20, { a: 'middle', fill: D });
+    s += T(480, 476, 'Updates restart on their own once the battery is charged.', 20, { a: 'middle', fill: D });
+    return s;
+  }
+  document.getElementById('optNight').innerHTML = optNight();
+  document.getElementById('optCharge').innerHTML = optCharge();
+
+  document.getElementById('optC2a').innerHTML = optC2(calm);
+  document.getElementById('optC2b').innerHTML = optC2(storm);
+
+  document.getElementById('optA').innerHTML = optA();
+  document.getElementById('optB').innerHTML = optB();
+  document.getElementById('optC').innerHTML = optC();
+
+  const cb = document.getElementById('actual');
+  cb.addEventListener('change', () => document.body.classList.toggle('actual', cb.checked));
+})();
+</script>
