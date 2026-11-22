@@ -17,7 +17,6 @@
 
 #define MID_DOT "\xC2\xB7"
 #define SEP     "  \xC2\xB7  "
-#define COL_SLOT_SUB 12   // #cfcfca on the black slot
 
 // ---------------------------------------------------------------------------------------------
 // Text layer: every string goes through here. A "nan"/"inf" token never reaches the framebuffer.
@@ -155,8 +154,8 @@ void rainTotalsText(char* b, size_t n, const WeatherData& d, int64_t now) {
 
 // One centred info line, shrinking the font until it fits 912 px.
 void drawInfoLine(Gfx& g, int baseline, const char* line) {
-  static const EFont* const fonts[] = {&AtkR17, &AtkR16, &AtkR15, &AtkR14};
-  txtFit(g, 480, baseline, line, fonts, 4, 912, COL_K, ALIGN_CENTER);
+  static const EFont* const fonts[] = {&AtkR18, &AtkR17, &AtkR16};
+  txtFit(g, 480, baseline, line, fonts, 3, 912, COL_K, ALIGN_CENTER);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -165,7 +164,7 @@ void drawInfoLine(Gfx& g, int baseline, const char* line) {
 void drawSlot(Gfx& g, const SmartSlot& s) {
   const int sx = 798, sy = 60, sw = 138, sh = 172;
   g.fillRoundRect(sx, sy, sw, sh, 8, COL_K);
-  txt(g, sx + sw / 2, sy + 26, s.label, AtkB14, COL_PAPER, ALIGN_CENTER, 2);
+  txt(g, sx + sw / 2, sy + 26, s.label, AtkB17, COL_PAPER, ALIGN_CENTER, 2);
 
   // Big text: next to the icon if it fits, else centred without the icon.
   static const EFont* const withIcon[] = {&AtkB50, &AtkB42};
@@ -190,10 +189,10 @@ void drawSlot(Gfx& g, const SmartSlot& s) {
   } else {
     txtFit(g, sx + sw / 2, sy + 94, s.big, alone, 4, sw - 16, COL_PAPER, ALIGN_CENTER);
   }
-  static const EFont* const sub1F[] = {&AtkB17, &AtkB15, &AtkB14};
-  static const EFont* const sub2F[] = {&AtkR16, &AtkR15, &AtkR14};
-  txtFit(g, sx + sw / 2, sy + 132, s.sub1, sub1F, 3, sw - 12, COL_PAPER, ALIGN_CENTER);
-  txtFit(g, sx + sw / 2, sy + 156, s.sub2, sub2F, 3, sw - 12, COL_SLOT_SUB, ALIGN_CENTER);
+  // everything on the black box is white and bold: grey text on black is unreadable on the panel
+  static const EFont* const subF[] = {&AtkB18, &AtkB17};
+  txtFit(g, sx + sw / 2, sy + 132, s.sub1, subF, 2, sw - 12, COL_PAPER, ALIGN_CENTER);
+  txtFit(g, sx + sw / 2, sy + 158, s.sub2, subF, 2, sw - 12, COL_PAPER, ALIGN_CENTER);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -215,18 +214,32 @@ void drawLiveHeader(Gfx& g, const ScreenStatus& st, int64_t now, int64_t dataEpo
     fmtDate(date, sizeof date, now);
     fmtClock(clock, sizeof clock, dataEpoch);
     snprintf(line, sizeof line, "%s " MID_DOT " Updated %s", date, clock);
-    txt(g, right, 34, line, AtkR22, COL_D, ALIGN_RIGHT);
+    txt(g, right, 34, line, AtkR22, COL_K, ALIGN_RIGHT);
   }
   if (batt) drawBattery(g, 894, 19, st.batteryPercent);
   rule(g, 48);
 }
 
-void drawStat(Gfx& g, int x, int y, const char* label, const char* value, const char* unit, const char* sub) {
-  txt(g, x, y + 15, label, AtkB14, COL_D, ALIGN_LEFT, 2);
+// Small filled triangle arrow (the font's arrow glyphs look like a "1" at this size). dir > 0 up, < 0 down.
+void drawTrendArrow(Gfx& g, int x, int baseline, int h, int dir, uint8_t grey) {
+  int w = h * 9 / 10;
+  float top = (float)(baseline - h), bot = (float)baseline;
+  if (dir > 0) g.fillTriangle(x + w / 2.0f, top, (float)x, bot, (float)(x + w), bot, grey);
+  else g.fillTriangle((float)x, top, (float)(x + w), top, x + w / 2.0f, bot, grey);
+}
+
+void drawStat(Gfx& g, int x, int y, const char* label, const char* value, const char* unit, const char* sub,
+              int trendDir = 0) {
+  txt(g, x, y + 15, label, AtkB17, COL_K, ALIGN_LEFT, 2);
   int w = txt(g, x, y + 56, value, AtkB42, COL_K);
   if (!isDash(value) && unit && *unit) txt(g, x + w + 4, y + 56, unit, AtkR18, COL_K);
-  static const EFont* const subF[] = {&AtkR16, &AtkR15, &AtkR14};
-  txtFit(g, x, y + 79, sub, subF, 3, 148, COL_D);
+  static const EFont* const subF[] = {&AtkR18, &AtkR17, &AtkR16};
+  int maxW = trendDir ? 148 - 20 : 148;
+  const EFont& sf = fitFont(sub, subF, 3, maxW);
+  char buf[96];
+  ellipsize(buf, sizeof buf, sub, sf, maxW);
+  int subW = g.drawText(x, y + 80, buf, sf, COL_K);
+  if (trendDir) drawTrendArrow(g, x + subW + 8, y + 80, measureText(sf, "0").inkAscent, trendDir, COL_K);
 }
 
 void drawCurrent(Gfx& g, const WeatherData& d, const SmartSlot& slot) {
@@ -251,7 +264,7 @@ void drawCurrent(Gfx& g, const WeatherData& d, const SmartSlot& slot) {
   char line[96];
   if (!cond[0]) snprintf(line, sizeof line, "%s", feels + 5);                 // skip the leading separator
   else { char c2[48]; ellipsize(c2, sizeof c2, cond, AtkR22, avail); snprintf(line, sizeof line, "%s%s", c2, feels); }
-  txt(g, 32, 226, line, AtkR22, COL_D);
+  txt(g, 32, 226, line, AtkR22, COL_K);
 
   // 2x2 stat grid
   char v[24], sub[48], t1[16], t2[24];
@@ -281,8 +294,8 @@ void drawCurrent(Gfx& g, const WeatherData& d, const SmartSlot& slot) {
   drawStat(g, 486, 148, "HUMIDITY", v, "%", sub);
   // PRESSURE
   fFix(v, sizeof v, c.pressureInHg, 2);
-  const char* trend = c.pressureTrend < 0 ? "falling \xE2\x86\x93" : c.pressureTrend > 0 ? "rising \xE2\x86\x91" : "steady";
-  drawStat(g, 640, 148, "PRESSURE", v, "in", isfinite(c.pressureInHg) ? trend : "");
+  const char* trend = c.pressureTrend < 0 ? "falling" : c.pressureTrend > 0 ? "rising" : "steady";
+  drawStat(g, 640, 148, "PRESSURE", v, "in", isfinite(c.pressureInHg) ? trend : "", isfinite(c.pressureInHg) ? c.pressureTrend : 0);
 
   drawSlot(g, slot);
 }
@@ -356,15 +369,19 @@ void drawLiveChartBlock(Gfx& g, const WeatherData& d, int64_t now) {
   const int cx = 60, cy = 274, cw = 870, ch = 112, half = cw / 2, nowX = cx + half;
   const float bw = half / 24.0f;
 
-  txt(g, cx + 4, 264, "MEASURED " MID_DOT " last 24 h", AtkB14, COL_D, ALIGN_LEFT, 2);
-  txt(g, cx + cw - 4, 264, "FORECAST " MID_DOT " next 24 h", AtkB14, COL_D, ALIGN_RIGHT, 2);
-  g.fillRect(nowX, cy - 4, half, 196, COL_FC);
+  txt(g, cx + 4, 264, "MEASURED " MID_DOT " last 24 h", AtkB17, COL_K, ALIGN_LEFT, 2);
+  txt(g, cx + cw - 4, 264, "FORECAST " MID_DOT " next 24 h", AtkB17, COL_K, ALIGN_RIGHT, 2);
+  // The forecast half stays on paper: the panel's greys are too dark to tint it. The solid "now" line and the
+  // dashed forecast line separate the halves; a hairline frame marks the forecast side.
+  g.rect(nowX, cy - 4, half, 196, COL_L, 1);
 
   AxisRange ax = autoRange2(c.past, 25, c.fut, 25, 5, 3);
   ChartRect full{cx, cy, cw, ch}, lr{cx, cy, half, ch}, rr{nowX, cy, half, ch};
   if (ax.valid) {
-    drawGrid(g, full, ax, AtkR15, 0, COL_XL, COL_D);
-    LineStyle past; past.thickness = 4; past.fillArea = true; past.fillGrey = COL_XL;
+    LineStyle fill; fill.fillArea = true; fill.fillGrey = COL_XL; fill.strokeLine = false;
+    drawLineSeries(g, c.past, 25, lr, ax, fill);                  // light area fill first
+    drawGrid(g, full, ax, AtkR17, 0, COL_L, COL_K);                // gridlines on top of the fill
+    LineStyle past; past.thickness = 4;
     drawLineSeries(g, c.past, 25, lr, ax, past);
     LineStyle fut; fut.thickness = 3; fut.dashed = true; fut.dash = 10; fut.gap = 7;
     drawLineSeries(g, c.fut, 25, rr, ax, fut);
@@ -377,35 +394,39 @@ void drawLiveChartBlock(Gfx& g, const WeatherData& d, int64_t now) {
     drawHiLoMarker(g, c.fut, 25, rr, ax, false, AtkB19);
     drawHiLoMarker(g, c.fut, 25, rr, ax, true, AtkB19);
   }
-  if (!c.anyPast) txt(g, cx + half / 2, cy + ch / 2 + 6, c.anyHist ? "no data" : "no history", AtkR20, COL_M, ALIGN_CENTER);
-  if (!c.anyFut) txt(g, nowX + half / 2, cy + ch / 2 + 6, "no forecast", AtkR20, COL_M, ALIGN_CENTER);
+  if (!c.anyPast) txt(g, cx + half / 2, cy + ch / 2 + 6, c.anyHist ? "no data" : "no history", AtkR20, COL_K, ALIGN_CENTER);
+  if (!c.anyFut) txt(g, nowX + half / 2, cy + ch / 2 + 6, "no forecast", AtkR20, COL_K, ALIGN_CENTER);
 
   // rain band
   const int ry = cy + ch + 10, rh = 40;
   g.hline(cx, ry + rh, cw, COL_L);
   BarStyle bs; bs.baseline = false; bs.gap = 4; bs.minHeight = 3; bs.floorMax = 0.05f; bs.grey = COL_K;
   drawBars(g, c.rain, 24, ChartRect{cx, ry, half, rh}, 0, bs);
-  drawProbBars(g, c.pop, 24, ChartRect{nowX, ry, half, rh}, COL_M, 4);
-  txt(g, cx - 8, ry + rh - 2, "rain", AtkR14, COL_D, ALIGN_RIGHT);
+  drawProbBars(g, c.pop, 24, ChartRect{nowX, ry, half, rh}, COL_K, 4);
+  txt(g, cx - 6, ry + rh - 2, "rain", AtkR17, COL_K, ALIGN_RIGHT);
   float total = 0;
   for (int i = 0; i < 24; i++) total += c.rain[i];
   char note[48];
   if (c.anyHist && total >= 0.005f) {
     snprintf(note, sizeof note, "%.2f in last 24 h", total);
-    txt(g, (int)(cx + 2 * bw), ry + 14, note, AtkR15, COL_D);
+    knockoutText(g, (int)(cx + 2 * bw), ry + 14, note, AtkR17, ALIGN_LEFT);
+    txt(g, (int)(cx + 2 * bw), ry + 14, note, AtkR17, COL_K);
   }
   popNoteText(note, sizeof note, c);
-  if (note[0]) txt(g, cx + cw - 4, ry + 14, note, AtkR15, COL_D, ALIGN_RIGHT);
+  if (note[0]) {
+    knockoutText(g, cx + cw - 4, ry + 14, note, AtkR17, ALIGN_RIGHT);
+    txt(g, cx + cw - 4, ry + 14, note, AtkR17, COL_K, ALIGN_RIGHT);
+  }
 
   // lightning row
   const int ly = ry + rh + 16;
-  txt(g, cx - 8, ly + 5, "strikes", AtkR14, COL_D, ALIGN_RIGHT);
-  drawLightningRow(g, c.strikes, 24, ChartRect{cx, ly - 10, half, 34}, AtkB13, AtkR14,
+  txt(g, cx - 6, ly + 5, "strikes", AtkR17, COL_K, ALIGN_RIGHT);
+  drawLightningRow(g, c.strikes, 24, ChartRect{cx, ly - 10, half, 34}, AtkB17, AtkR17,
                    c.anyHist ? "no lightning in 24 h" : "lightning history unavailable");
 
   // time axis
   HourAxis hx{c.startEpoch, 48, 6, 24, CHART_TZ_LOCAL};
-  drawHourAxis(g, cx, cw, 494, hx, AtkR15, AtkB15);
+  drawHourAxis(g, cx, cw, 494, hx, AtkR17, AtkB17);
 }
 
 void drawLiveInfo(Gfx& g, const WeatherData& d, int64_t now) {
@@ -461,15 +482,15 @@ void drawNightRows(Gfx& g, const DaySummary& s) {
   for (int i = 0; i < 6; i++) {
     int y = 140 + i * 46;
     txt(g, 28, y, rows[i].label, AtkB22, COL_K);
-    if (rows[i].time[0] && !isDash(rows[i].time)) txt(g, 150, y, rows[i].time, AtkR17, COL_D);
+    if (rows[i].time[0] && !isDash(rows[i].time)) txt(g, 150, y, rows[i].time, AtkR18, COL_K);
     static const EFont* const vf[] = {&AtkB32, &AtkB22};
     txtFit(g, 430, y + 2, rows[i].value, vf, 2, 270, COL_K, ALIGN_RIGHT);
-    if (i < 5) g.hline(28, y + 16, 402, COL_XL);
+    if (i < 5) g.hline(28, y + 16, 402, COL_L);
   }
 }
 
 void drawNightSpark(Gfx& g, const WeatherData& d, const ScreenStatus& st, int64_t now, int64_t dateRef, OvernightTitles titles) {
-  txt(g, 28, 420, titles == TITLES_TODAY_TOMORROW ? "Today's temperature" : "Yesterday's temperature", AtkR15, COL_D);
+  txt(g, 28, 420, titles == TITLES_TODAY_TOMORROW ? "Today's temperature" : "Yesterday's temperature", AtkR18, COL_K);
   int64_t mid = localMidnight(dateRef);
   int endHour = 23;
   if (titles == TITLES_TODAY_TOMORROW) {
@@ -496,16 +517,19 @@ void drawNightSpark(Gfx& g, const WeatherData& d, const ScreenStatus& st, int64_
   int fin = 0;
   for (int i = 0; i <= endHour; i++) if (isfinite(v[i])) fin++;
   if (fin >= 2) drawSparkline(g, v, endHour + 1, ChartRect{28, 430, 402, 50}, 3, COL_XL, true, 4);
-  else txt(g, 229, 462, "not enough data", AtkR17, COL_M, ALIGN_CENTER);
+  else txt(g, 229, 462, "not enough data", AtkR18, COL_K, ALIGN_CENTER);
+  char endLb[16];
+  formatHourLabel(endLb, sizeof endLb, endHour);
+  int endLeft = 430 - tw(AtkR17, endLb);
   for (int h = 0; h < endHour - 2; h += 6) {
     char lb[16];
     formatHourLabel(lb, sizeof lb, h);
     int x = 28 + (int)lroundf((float)h / endHour * 402);
-    txt(g, x, 498, lb, AtkR14, COL_D, h == 0 ? ALIGN_LEFT : ALIGN_CENTER);
+    int w = tw(AtkR17, lb);
+    if (h > 0 && x + w / 2 + 12 > endLeft) continue;    // would touch the last label
+    txt(g, x, 498, lb, AtkR17, COL_K, h == 0 ? ALIGN_LEFT : ALIGN_CENTER);
   }
-  char lb[16];
-  formatHourLabel(lb, sizeof lb, endHour);
-  txt(g, 430, 498, lb, AtkR14, COL_D, ALIGN_RIGHT);
+  txt(g, 430, 498, endLb, AtkR17, COL_K, ALIGN_RIGHT);
   (void)st;
 }
 
@@ -521,7 +545,7 @@ void drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitles t
   snprintf(dow, sizeof dow, "%s", dowName(dt.tm_wday)); upperAscii(dow);
   snprintf(mon, sizeof mon, "%s", monName(dt.tm_mon)); upperAscii(mon);
   snprintf(title, sizeof title, "%s " MID_DOT " %s %s %d", titles == TITLES_TODAY_TOMORROW ? "TOMORROW" : "TODAY", dow, mon, dt.tm_mday);
-  txt(g, 492, 92, title, AtkB15, COL_D, ALIGN_LEFT, 2);
+  txt(g, 492, 92, title, AtkB17, COL_K, ALIGN_LEFT, 2);
   if (sunriseOut) *sunriseOut = have ? df->sunrise : 0;
 
   // hourly series for that date
@@ -562,30 +586,30 @@ void drawNightRight(Gfx& g, const WeatherData& d, int64_t now, OvernightTitles t
     addItem(sub, sizeof sub, part);
   }
   static const EFont* const sf[] = {&AtkR18, &AtkR17, &AtkR16};
-  txtFit(g, 492, 264, sub, sf, 3, 444, COL_D);
+  txtFit(g, 492, 264, sub, sf, 3, 444, COL_K);
 
   // hourly chart
   const int cx = 530, cy = 292, cw = 400, ch = 100;
   AxisRange ax = autoRange(temp, 18, 5, 3);
   ChartRect cr{cx, cy, cw, ch};
   if (ax.valid) {
-    drawGrid(g, cr, ax, AtkR14, 0, COL_XL, COL_D);
+    drawGrid(g, cr, ax, AtkR17, 0, COL_L, COL_K);
     LineStyle ls; ls.thickness = 3; ls.dashed = true; ls.dash = 10; ls.gap = 7;
     drawLineSeries(g, temp, 18, cr, ax, ls);
     drawHiLoMarker(g, temp, 18, cr, ax, true, AtkB18, 0);
   } else {
-    txt(g, cx + cw / 2, cy + ch / 2 + 6, "no forecast", AtkR20, COL_M, ALIGN_CENTER);
+    txt(g, cx + cw / 2, cy + ch / 2 + 6, "no forecast", AtkR20, COL_K, ALIGN_CENTER);
   }
   const int ry = cy + ch + 10, rh = 36;
   g.hline(cx, ry + rh, cw, COL_L);
-  drawProbBars(g, pop, 18, ChartRect{cx, ry, cw, rh}, COL_M, 4);
-  txt(g, cx - 6, ry + rh - 2, "rain %", AtkR13, COL_D, ALIGN_RIGHT);
+  drawProbBars(g, pop, 18, ChartRect{cx, ry, cw, rh}, COL_K, 4);
+  txt(g, cx - 6, ry + rh - 2, "rain %", AtkR17, COL_K, ALIGN_RIGHT);
   static const int axisHours[] = {5, 9, 13, 17, 21};
   for (int i = 0; i < 5; i++) {
     char lb[16];
     formatHourLabel(lb, sizeof lb, axisHours[i]);
     int x = cx + (int)lroundf((float)(axisHours[i] - 5) / 17 * cw);
-    txt(g, x, 470, lb, AtkR14, COL_D, i == 0 ? ALIGN_LEFT : ALIGN_CENTER);
+    txt(g, x, 470, lb, AtkR17, COL_K, i == 0 ? ALIGN_LEFT : ALIGN_CENTER);
   }
 }
 
@@ -635,7 +659,7 @@ void drawOvernight(Gfx& g, const WeatherData& d, const ScreenStatus& st, Overnig
   snprintf(dow, sizeof dow, "%s", dowName(lt.tm_wday)); upperAscii(dow);
   snprintf(mon, sizeof mon, "%s", monName(lt.tm_mon)); upperAscii(mon);
   snprintf(title, sizeof title, "%s " MID_DOT " %s %s %d", titles == TITLES_TODAY_TOMORROW ? "TODAY" : "YESTERDAY", dow, mon, lt.tm_mday);
-  txt(g, 28, 92, title, AtkB15, COL_D, ALIGN_LEFT, 2);
+  txt(g, 28, 92, title, AtkB17, COL_K, ALIGN_LEFT, 2);
   drawNightRows(g, d.today);
   drawNightSpark(g, d, st, now, dateRef, titles);
 
@@ -660,7 +684,7 @@ void drawOvernight(Gfx& g, const WeatherData& d, const ScreenStatus& st, Overnig
 
 void drawChargeMe(Gfx& g, const ScreenStatus& st) {
   g.clear(COL_PAPER);
-  drawHeaderLabel(g, 28, 36, COL_D);
+  drawHeaderLabel(g, 28, 36, COL_K);
   g.roundRect(340, 120, 260, 130, 16, COL_K, 8);
   g.fillRoundRect(604, 160, 20, 50, 4, COL_K);
   g.fillRoundRect(356, 136, 22, 98, 3, COL_K);
@@ -669,7 +693,7 @@ void drawChargeMe(Gfx& g, const ScreenStatus& st) {
   if (st.batteryVolts > 0.5f) snprintf(line, sizeof line, "Battery %.2f V " MID_DOT " weather updates stopped to protect the cell", st.batteryVolts);
   else snprintf(line, sizeof line, "Battery low " MID_DOT " weather updates stopped to protect the cell");
   static const EFont* const f22[] = {&AtkR22, &AtkR20, &AtkR18};
-  txtFit(g, 480, 396, line, f22, 3, 900, COL_D, ALIGN_CENTER);
+  txtFit(g, 480, 396, line, f22, 3, 900, COL_K, ALIGN_CENTER);
   if (st.lastGoodEpoch > 0) {
     char date[24], clock[16];
     fmtDate(date, sizeof date, st.lastGoodEpoch);
@@ -678,26 +702,26 @@ void drawChargeMe(Gfx& g, const ScreenStatus& st) {
   } else {
     snprintf(line, sizeof line, "No weather data yet");
   }
-  txt(g, 480, 446, line, AtkR20, COL_D, ALIGN_CENTER);
-  txt(g, 480, 476, "Updates restart on their own once the battery is charged.", AtkR20, COL_D, ALIGN_CENTER);
+  txt(g, 480, 446, line, AtkR20, COL_K, ALIGN_CENTER);
+  txt(g, 480, 476, "Updates restart on their own once the battery is charged.", AtkR20, COL_K, ALIGN_CENTER);
 }
 
 void drawError(Gfx& g, const char* reason, const ScreenStatus& st) {
   g.clear(COL_PAPER);
-  drawHeaderLabel(g, 28, 36, COL_D);
+  drawHeaderLabel(g, 28, 36, COL_K);
   drawIcon(g, ICON_CLOUDY, 480, 150, 1.2f);
   g.fillCircle(552, 196, 26, COL_K);
   txt(g, 552, 208, "!", AtkB32, COL_PAPER, ALIGN_CENTER);
   txt(g, 480, 320, "No weather data", AtkB50, COL_K, ALIGN_CENTER);
   static const EFont* const rf[] = {&AtkR22, &AtkR20, &AtkR18};
-  txtFit(g, 480, 372, reason && *reason ? reason : "Unknown error", rf, 3, 880, COL_D, ALIGN_CENTER);
+  txtFit(g, 480, 372, reason && *reason ? reason : "Unknown error", rf, 3, 880, COL_K, ALIGN_CENTER);
   if (st.nowEpoch > 0) {
     char date[24], clock[16], line[64];
     fmtDate(date, sizeof date, st.nowEpoch);
     fmtClock(clock, sizeof clock, st.nowEpoch);
     snprintf(line, sizeof line, "%s " MID_DOT " %s", date, clock);
-    txt(g, 480, 420, line, AtkR20, COL_D, ALIGN_CENTER);
+    txt(g, 480, 420, line, AtkR20, COL_K, ALIGN_CENTER);
   }
-  txt(g, 480, 466, "Will try again at the next update.", AtkR20, COL_D, ALIGN_CENTER);
+  txt(g, 480, 466, "Will try again at the next update.", AtkR20, COL_K, ALIGN_CENTER);
   if (st.batteryPercent >= 0) drawBattery(g, 894, 19, st.batteryPercent);
 }

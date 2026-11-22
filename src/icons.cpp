@@ -125,38 +125,44 @@ void sunOrMoon(Gfx& g, bool night, float cx, float cy, float r, int sw, uint8_t 
   else drawSun(g, R(cx), R(cy), R(r), sw, COL_PAPER);
 }
 
-// Two small precipitation marks centred on (cx, cy).
+// Precipitation marks under the cloud of the "possibly ..." icons, centred on (cx, cy). Big and thick so they
+// still read on the panel at small icon scales: a ~40 px tall bolt (scale 1), 3+ px drops/flakes.
 void smallPrecip(Gfx& g, Precip p, float cx, float cy, float sc, int sw) {
-  for (int i = 0; i < 2; i++) {
-    float x = cx + (i - 0.5f) * 24 * sc;
-    switch (p) {
-      case P_RAIN:
-        g.line(R(x), R(cy - 8 * sc), R(x - 6 * sc), R(cy + 8 * sc), sw, COL_K);
-        break;
-      case P_SNOW: drawSnowflake(g, R(x), R(cy), R(6 * sc), sw, COL_K); break;
-      case P_SLEET:
-        if (i == 0) g.line(R(x), R(cy - 8 * sc), R(x - 6 * sc), R(cy + 8 * sc), sw, COL_K);
-        else drawSnowflake(g, R(x), R(cy), R(6 * sc), sw, COL_K);
-        break;
-      case P_THUNDER:
-        if (i == 0) drawBolt(g, x, cy, 1.1f * sc, COL_K);
-        else g.line(R(x), R(cy - 8 * sc), R(x - 6 * sc), R(cy + 8 * sc), sw, COL_K);
-        break;
-      default: break;
-    }
+  int tw = sw + 1;
+  switch (p) {
+    case P_RAIN:
+      for (int i = 0; i < 3; i++) {
+        float x = cx + (i - 1) * 22 * sc;
+        g.line(R(x + 4 * sc), R(cy - 12 * sc), R(x - 5 * sc), R(cy + 12 * sc), tw, COL_K);
+      }
+      break;
+    case P_SNOW:
+      drawSnowflake(g, R(cx - 16 * sc), R(cy), R(10 * sc), tw, COL_K);
+      drawSnowflake(g, R(cx + 16 * sc), R(cy), R(10 * sc), tw, COL_K);
+      break;
+    case P_SLEET:
+      g.line(R(cx - 18 * sc + 4 * sc), R(cy - 12 * sc), R(cx - 18 * sc - 5 * sc), R(cy + 12 * sc), tw, COL_K);
+      drawSnowflake(g, R(cx + 14 * sc), R(cy), R(10 * sc), tw, COL_K);
+      break;
+    case P_THUNDER:
+      drawBolt(g, cx - 6 * sc, cy, 2.0f * sc, COL_K);
+      g.line(R(cx + 26 * sc + 4 * sc), R(cy - 12 * sc), R(cx + 26 * sc - 5 * sc), R(cy + 12 * sc), tw, COL_K);
+      g.line(R(cx + 12 * sc + 4 * sc), R(cy - 12 * sc), R(cx + 12 * sc - 5 * sc), R(cy + 12 * sc), tw, COL_K);
+      break;
+    default: break;
   }
 }
 
-// Sun/moon peeking behind a cloud. With precipitation the group is smaller and shifted up.
+// Sun/moon peeking behind a cloud. With precipitation the group is shifted up so the marks fit below.
 void partly(Gfx& g, bool night, Precip p, int cx, int cy, float sc, uint8_t bg) {
   int sw = iconStroke(sc);
   if (p == P_NONE) {
     sunOrMoon(g, night, cx - 18 * sc, cy - 18 * sc, 18 * sc, sw, bg);
     drawCloud(g, cx + 6 * sc, cy + 8 * sc, sc * 0.85f, COL_PAPER, sw);
   } else {
-    sunOrMoon(g, night, cx - 22 * sc, cy - 28 * sc, 15 * sc, sw, bg);
-    drawCloud(g, cx + 8 * sc, cy - 6 * sc, sc * 0.8f, COL_PAPER, sw);
-    smallPrecip(g, p, cx + 8 * sc, cy + 34 * sc, sc, sw);
+    sunOrMoon(g, night, cx - 28 * sc, cy - 32 * sc, (night ? 22 : 16) * sc, sw, bg);
+    drawCloud(g, cx + 14 * sc, cy - 6 * sc, sc * 0.78f, COL_PAPER, sw);
+    smallPrecip(g, p, cx + 12 * sc, cy + 31 * sc, sc, sw);
   }
 }
 

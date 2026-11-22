@@ -190,6 +190,7 @@ void drawLineSeries(Gfx& g, const float* v, int n, const ChartRect& r, const Axi
       pts[k] = {px, py};
     }
     if (len == 1) {
+      if (!st.strokeLine) continue;
       int rad = st.thickness / 2;
       g.fillCircle((int)lroundf(pts[0].x), (int)lroundf(pts[0].y), rad < 1 ? 1 : rad, st.grey);
       continue;
@@ -201,6 +202,7 @@ void drawLineSeries(Gfx& g, const float* v, int n, const ChartRect& r, const Axi
       poly[len + 1] = {pts[0].x, base};
       g.fillPolygon(poly, len + 2, st.fillGrey);
     }
+    if (!st.strokeLine) continue;
     if (st.dashed) g.dashedPolyline(pts, len, st.thickness, st.grey, st.dash, st.gap);
     else g.polyline(pts, len, st.thickness, st.grey, CAP_ROUND);
   }
@@ -236,6 +238,7 @@ bool drawHiLoMarker(Gfx& g, const float* v, int n, const ChartRect& r, const Axi
   int left = px - ts.width / 2;
   if (left + ts.width > r.x + r.w) left = r.x + r.w - ts.width;
   if (left < r.x) left = r.x;
+  g.fillRect(left - 3, baseline - ts.inkAscent - 3, ts.width + 6, ts.inkAscent + ts.inkDescent + 6, COL_PAPER);
   g.drawText(left, baseline, text, font, grey, ALIGN_LEFT);
   return true;
 }
@@ -253,6 +256,12 @@ void drawGrid(Gfx& g, const ChartRect& r, const AxisRange& ax, const EFont& font
     formatDegrees(t, sizeof t, vals[i]);
     g.drawText(r.x - 8, y + half, t, font, textGrey, ALIGN_RIGHT);
   }
+}
+
+void knockoutText(Gfx& g, int x, int y, const char* s, const EFont& font, Align a, int pad, uint8_t bg) {
+  TextSize ts = measureText(font, s);
+  int left = a == ALIGN_CENTER ? x - ts.width / 2 : a == ALIGN_RIGHT ? x - ts.width : x;
+  g.fillRect(left - pad, y - ts.inkAscent - pad, ts.width + 2 * pad, ts.inkAscent + ts.inkDescent + 2 * pad, bg);
 }
 
 void drawNowLine(Gfx& g, int x, int y0, int y1, int thickness, uint8_t grey) {
@@ -275,11 +284,12 @@ void drawBars(Gfx& g, const float* v, int n, const ChartRect& r, float scaleMax,
 void drawProbBars(Gfx& g, const float* pct, int n, const ChartRect& r, uint8_t grey, int gap) {
   if (!pct || n <= 0) return;
   for (int i = 0; i < n; i++) {
-    int h = barHeight(pct[i], 100.0f, r.h, 2);
+    int h = barHeight(pct[i], 100.0f, r.h, 5);
     if (h <= 0) continue;
     int bx, bw;
     barSlot(i, n, r.x, r.w, gap, &bx, &bw);
-    g.fillRect(bx, r.y + r.h - h, bw, h, grey);
+    g.fillRect(bx, r.y + r.h - h, bw, h, COL_PAPER);
+    g.rect(bx, r.y + r.h - h, bw, h, grey, 2);
   }
 }
 
@@ -303,7 +313,7 @@ bool drawLightningRow(Gfx& g, const uint16_t* counts, int n, const ChartRect& r,
   if (n <= 0) return false;
   float slot = (float)r.w / n;
   if (!any) {
-    if (emptyMsg && *emptyMsg) g.drawText((int)lroundf(r.x + 2 * slot), r.y + 16, emptyMsg, msgFont, COL_M);
+    if (emptyMsg && *emptyMsg) g.drawText((int)lroundf(r.x + 2 * slot), r.y + 16, emptyMsg, msgFont, COL_K);
     return false;
   }
   for (int i = 0; i < n; i++) {
@@ -324,6 +334,6 @@ void drawHourAxis(Gfx& g, int x, int w, int baselineY, const HourAxis& ax, const
     const HourLabel& l = labels[i];
     int lx = x + (int)lroundf((float)l.slot * w / (ax.slots < 1 ? 1 : ax.slots));
     Align al = l.slot == 0 ? ALIGN_LEFT : (l.slot == ax.slots ? ALIGN_RIGHT : ALIGN_CENTER);
-    g.drawText(lx, baselineY, l.text, l.isNow ? bold : regular, l.isNow ? COL_K : COL_D, al);
+    g.drawText(lx, baselineY, l.text, l.isNow ? bold : regular, COL_K, al);
   }
 }

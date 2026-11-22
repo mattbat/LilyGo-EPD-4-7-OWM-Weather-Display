@@ -32,6 +32,7 @@ void setUp() {
   g.begin(arena + GUARD);
   g.clear(15);
   screenTextAnomaliesReset();
+  gfxMinTextAdvanceReset();
 }
 void tearDown() {}
 
@@ -80,22 +81,36 @@ void test_rendering_is_deterministic() {
   }
 }
 
+void test_no_text_smaller_than_16px() {
+  // advance_y (line height) of the smallest permitted font; the 13-15 px fonts all have a smaller one
+  const int minAdvance = AtkR16.advance_y;
+  for (int i = 0; i < kSceneCount; i++) {
+    setUp();
+    renderScene(kScenes[i].name, g);
+    TEST_ASSERT_TRUE_MESSAGE(gfxMinTextAdvance() >= minAdvance, kScenes[i].name);
+  }
+  setUp(); weatherDataInit(d); drawLive(g, d, status());
+  TEST_ASSERT_TRUE(gfxMinTextAdvance() >= minAdvance);
+  setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
+  TEST_ASSERT_TRUE(gfxMinTextAdvance() >= minAdvance);
+}
+
 // ------------------------------------------------------------------------------------------ goldens
 struct Golden { const char* name; uint32_t sum; int dark; };
 static const Golden kGolden[] = {
-  {"live_real", 0xF32BBE45u, 55297},
-  {"live_storm", 0x0A66081Bu, 56369},
-  {"live_raining", 0x8EF81B17u, 55856},
-  {"live_cold", 0xF00E872Fu, 54341},
-  {"live_hot", 0xBBE926BEu, 58753},
-  {"live_offline", 0xC36A8355u, 60873},
-  {"live_nohistory", 0x07ADF85Fu, 51732},
-  {"overnight_today", 0x04EC2BC6u, 73025},
-  {"overnight_yesterday", 0xCC24966Au, 72998},
-  {"overnight_cold", 0x17B82126u, 71963},
-  {"overnight_hot", 0xB4DEC0CCu, 73764},
-  {"charge_me", 0xD8E44451u, 23263},
-  {"error", 0x89DBA296u, 13563},
+  {"live_real", 0x60D0C460u, 59937},
+  {"live_storm", 0x931B345Eu, 60379},
+  {"live_raining", 0x84437278u, 60598},
+  {"live_cold", 0xB768E925u, 58900},
+  {"live_hot", 0x704D7E43u, 62201},
+  {"live_offline", 0x51FFD5E0u, 65358},
+  {"live_nohistory", 0x07F9B4E7u, 56811},
+  {"overnight_today", 0xCAFD9A0Cu, 75402},
+  {"overnight_yesterday", 0xB73480E3u, 75505},
+  {"overnight_cold", 0xEFF21CF3u, 74337},
+  {"overnight_hot", 0x5316B3CAu, 75841},
+  {"charge_me", 0xA8418E19u, 24341},
+  {"error", 0xE0D09BBAu, 14245},
 };
 
 void test_goldens() {
@@ -149,7 +164,7 @@ void test_slot_box_in_every_state() {
 }
 void test_offline_chip_only_when_offline() {
   renderScene("live_real", g);
-  TEST_ASSERT_TRUE(darkFraction(640, 10, 870, 40) < 0.1f);
+  TEST_ASSERT_TRUE(darkFraction(640, 10, 870, 40) < 0.25f);
   setUp(); renderScene("live_offline", g);
   TEST_ASSERT_TRUE(darkFraction(660, 10, 860, 40) > 0.55f);
   // the chip replaces "Updated": the right-hand header text is gone from the left of the chip
@@ -331,6 +346,7 @@ int main() {
   UNITY_BEGIN();
   RUN_TEST(test_every_scene_renders_inside_the_panel);
   RUN_TEST(test_rendering_is_deterministic);
+  RUN_TEST(test_no_text_smaller_than_16px);
   RUN_TEST(test_goldens);
   RUN_TEST(test_live_header_rule_and_slot_box);
   RUN_TEST(test_slot_box_in_every_state);

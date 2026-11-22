@@ -358,8 +358,13 @@ TextSize measureText(const EFont& font, const char* s, int ls) {
   return m;
 }
 
+static int g_minTextAdvance = 0;
+int gfxMinTextAdvance() { return g_minTextAdvance; }
+void gfxMinTextAdvanceReset() { g_minTextAdvance = 0; }
+
 int Gfx::drawText(int x, int y, const char* s, const EFont& font, uint8_t grey, Align align, int ls) {
   if (!s || !fb) return 0;
+  if (*s && (g_minTextAdvance == 0 || font.advance_y < g_minTextAdvance)) g_minTextAdvance = font.advance_y;
   TextSize m = measureText(font, s, ls);
   if (align == ALIGN_CENTER) x -= m.width / 2;
   else if (align == ALIGN_RIGHT) x -= m.width;

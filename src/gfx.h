@@ -24,6 +24,10 @@ struct TextSize {
   int inkDescent;  // lowest ink pixel below the baseline for this string (>= 0)
 };
 
+// Test hook: smallest font line height (EFont::advance_y) passed to drawText since the last reset (0 = none yet).
+int gfxMinTextAdvance();
+void gfxMinTextAdvanceReset();
+
 // UTF-8 decoding: returns next code point and advances p. Invalid input yields U+FFFD.
 uint32_t utf8Next(const char*& p);
 // Glyph lookup, nullptr if the font does not contain the code point.

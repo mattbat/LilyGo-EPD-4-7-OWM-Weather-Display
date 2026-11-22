@@ -168,13 +168,19 @@ void test_draw_bars_pixels() {
 }
 void test_prob_bars() {
   float p[] = {100, 50, 0, NAN, 1};
-  drawProbBars(g, p, 5, {0, 0, 100, 40}, 8, 4);
-  TEST_ASSERT_EQUAL_UINT8(8, g.get(10, 0));       // 100% reaches the top
-  TEST_ASSERT_EQUAL_UINT8(8, g.get(30, 39));
-  TEST_ASSERT_EQUAL_UINT8(15, g.get(30, 10));
+  drawProbBars(g, p, 5, {0, 0, 100, 40}, 1, 4);
+  // outlined bars: 2 px outline, paper inside
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(10, 0));       // 100% reaches the top (outline)
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(10, 39));
+  TEST_ASSERT_EQUAL_UINT8(15, g.get(18, 20));     // 100% bar is hollow (bar x 2..17)
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(2, 20));       // ...with a 2 px left edge
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(3, 20));
+  TEST_ASSERT_EQUAL_UINT8(15, g.get(30, 10));     // 50% bar top half empty
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(30, 39));
   TEST_ASSERT_EQUAL_UINT8(15, g.get(50, 39));
-  TEST_ASSERT_EQUAL_UINT8(8, g.get(90, 39));      // 1% still visible (min 2 px)
-  TEST_ASSERT_EQUAL_UINT8(8, g.get(90, 38));
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(90, 39));      // 1% still visible (min 5 px tall)
+  TEST_ASSERT_EQUAL_UINT8(1, g.get(90, 35));
+  TEST_ASSERT_EQUAL_UINT8(15, g.get(90, 34));
 }
 
 // ---- line series -----------------------------------------------------------------------------
@@ -267,7 +273,7 @@ void test_hilo_label_clamped_at_top() {
 void test_grid_draws_lines_and_labels() {
   AxisRange ax = {45, 75, true};
   ChartRect r = {100, 100, 300, 120};
-  drawGrid(g, r, ax, AtkR15);
+  drawGrid(g, r, ax, AtkR15, 0, COL_XL);
   // 50, 60, 70 -> y = 220 - (v-45)/30*120
   TEST_ASSERT_EQUAL_UINT8(COL_XL, g.get(200, 220 - 20));
   TEST_ASSERT_EQUAL_UINT8(COL_XL, g.get(200, 220 - 60));
@@ -300,7 +306,7 @@ void test_lightning_row() {
   int grey = 0, dark = 0;
   for (int y = 90; y < 140; y++) for (int x = 90; x < 400; x++) { uint8_t v = g.get(x, y); if (v != 15) grey++; if (v < 5) dark++; }
   TEST_ASSERT_TRUE(grey > 30);     // the message is there
-  TEST_ASSERT_EQUAL_INT(0, dark);  // ...and it is grey, not black
+  TEST_ASSERT_TRUE(dark > 0);      // ...and it is black ink (grey text is too faint on the panel)
   g.clear(15);
   uint16_t s[24] = {0};
   s[5] = 14;
