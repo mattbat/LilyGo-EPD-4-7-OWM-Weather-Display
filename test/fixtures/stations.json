@@ -1,0 +1,132 @@
+{
+ "stations": [
+  {
+   "created_epoch": 1676516242,
+   "devices": [
+    {
+     "device_id": 249991,
+     "device_meta": {
+      "agl": 1.8288,
+      "environment": "indoor",
+      "name": "HB-00000000",
+      "wifi_network_name": ""
+     },
+     "device_type": "HB",
+     "firmware_revision": "194",
+     "hardware_revision": "1",
+     "location_id": 97113,
+     "serial_number": "HB-00000000"
+    },
+    {
+     "device_id": 249992,
+     "device_meta": {
+      "agl": 1.8288,
+      "environment": "outdoor",
+      "name": "ST-00000000",
+      "wifi_network_name": ""
+     },
+     "device_settings": {
+      "show_precip_final": true
+     },
+     "device_type": "ST",
+     "firmware_revision": "181",
+     "hardware_revision": "1",
+     "location_id": 97113,
+     "serial_number": "ST-00000000"
+    }
+   ],
+   "is_local_mode": false,
+   "last_modified_epoch": 1676682833,
+   "latitude": 0.0,
+   "location_id": 97113,
+   "longitude": 0.0,
+   "name": "Highgarden - Stark St.",
+   "public_name": "Highgarden - Stark St.",
+   "state": 1,
+   "station_id": 97113,
+   "station_items": [
+    {
+     "device_id": 249992,
+     "item": "air_temperature_humidity",
+     "location_id": 97113,
+     "location_item_id": 802106,
+     "sort": 0,
+     "station_id": 97113,
+     "station_item_id": 802106
+    },
+    {
+     "device_id": 249992,
+     "item": "barometric_pressure",
+     "location_id": 97113,
+     "location_item_id": 802108,
+     "sort": 1,
+     "station_id": 97113,
+     "station_item_id": 802108
+    },
+    {
+     "device_id": 249991,
+     "item": "diagnostics",
+     "location_id": 97113,
+     "location_item_id": 802112,
+     "station_id": 97113,
+     "station_item_id": 802112
+    },
+    {
+     "device_id": 249992,
+     "item": "diagnostics",
+     "location_id": 97113,
+     "location_item_id": 802115,
+     "station_id": 97113,
+     "station_item_id": 802115
+    },
+    {
+     "device_id": 249992,
+     "item": "light",
+     "location_id": 97113,
+     "location_item_id": 802110,
+     "sort": 5,
+     "station_id": 97113,
+     "station_item_id": 802110
+    },
+    {
+     "device_id": 249992,
+     "item": "lightning",
+     "location_id": 97113,
+     "location_item_id": 802107,
+     "sort": 2,
+     "station_id": 97113,
+     "station_item_id": 802107
+    },
+    {
+     "device_id": 249992,
+     "item": "rain",
+     "location_id": 97113,
+     "location_item_id": 802109,
+     "sort": 4,
+     "station_id": 97113,
+     "station_item_id": 802109
+    },
+    {
+     "device_id": 249992,
+     "item": "wind",
+     "location_id": 97113,
+     "location_item_id": 802111,
+     "sort": 3,
+     "station_id": 97113,
+     "station_item_id": 802111
+    }
+   ],
+   "station_meta": {
+    "elevation": 348.94500732421875,
+    "share_with_wf": true,
+    "share_with_wu": false
+   },
+   "timezone": "America/Chicago",
+   "timezone_offset_minutes": -360
+  }
+ ],
+ "status": {
+  "status_code": 0,
+  "status_message": "SUCCESS"
+ }
+}
