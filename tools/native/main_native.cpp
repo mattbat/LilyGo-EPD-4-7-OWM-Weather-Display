@@ -16,6 +16,7 @@
 #include "stb_image_write.h"
 #include "gfx.h"
 #include "fonts/fonts.h"
+#include "gallery.h"
 
 static uint8_t g_fb[PANEL_WIDTH * PANEL_HEIGHT / 2];
 
@@ -128,6 +129,16 @@ int main() {
   drawTestCard(g);
   if (!writePng(g, "out/test_card.png")) { fprintf(stderr, "failed to write out/test_card.png\n"); return 1; }
   printf("wrote out/test_card.png\n");
+
+  static uint8_t fb2[PANEL_WIDTH * PANEL_HEIGHT / 2], fb3[PANEL_WIDTH * PANEL_HEIGHT / 2], fb4[PANEL_WIDTH * PANEL_HEIGHT / 2];
+  Gfx pages[4];
+  pages[0].begin(g_fb); pages[1].begin(fb2); pages[2].begin(fb3); pages[3].begin(fb4);
+  galleryPageIcons1(pages[0]);
+  galleryPageIcons2(pages[1]);
+  galleryPageIcons3(pages[2]);
+  galleryPageCharts(pages[3]);
+  if (!galleryWrite(pages, 4, "out/gallery.png")) { fprintf(stderr, "failed to write out/gallery.png\n"); return 1; }
+  printf("wrote out/gallery.png\n");
   return 0;
 }
 #endif
