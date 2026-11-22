@@ -3,27 +3,20 @@
 #include "efont.h"
 
 // AtkR<size> = Atkinson Hyperlegible Regular, AtkB<size> = Bold (size = em height in pixels).
-// AtkB84 and AtkB136 contain only space . - / digits and the degree sign.
-extern const EFont AtkB13;
-extern const EFont AtkB14;
-extern const EFont AtkB15;
-extern const EFont AtkB17;
-extern const EFont AtkB18;
-extern const EFont AtkB19;
+// AtkB136 and AtkB170 contain only space . - / digits and the degree sign.
 extern const EFont AtkB20;
 extern const EFont AtkB22;
-extern const EFont AtkB32;
-extern const EFont AtkB42;
+extern const EFont AtkB24;
+extern const EFont AtkB28;
+extern const EFont AtkB34;
+extern const EFont AtkB46;
 extern const EFont AtkB50;
+extern const EFont AtkB56;
 extern const EFont AtkB76;
-extern const EFont AtkB84;
 extern const EFont AtkB136;
-extern const EFont AtkR13;
-extern const EFont AtkR14;
-extern const EFont AtkR15;
-extern const EFont AtkR16;
-extern const EFont AtkR17;
-extern const EFont AtkR18;
+extern const EFont AtkB170;
 extern const EFont AtkR20;
 extern const EFont AtkR22;
+extern const EFont AtkR24;
+extern const EFont AtkR28;
 extern const EFont AtkR44;

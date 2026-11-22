@@ -35,8 +35,7 @@ static void drawTestCard(Gfx& g) {
   char buf[96];
 
   // ---- column A: regular sizes
-  static const NamedFont reg[] = {{&AtkR13, "R13"}, {&AtkR14, "R14"}, {&AtkR15, "R15"}, {&AtkR16, "R16"},
-                                  {&AtkR17, "R17"}, {&AtkR18, "R18"}, {&AtkR20, "R20"}, {&AtkR22, "R22"}, {&AtkR44, "R44"}};
+  static const NamedFont reg[] = {{&AtkR20, "R20"}, {&AtkR22, "R22"}, {&AtkR24, "R24"}, {&AtkR28, "R28"}, {&AtkR44, "R44"}};
   int y = 6;
   for (const NamedFont& nf : reg) {
     const EFont& f = *nf.f;
@@ -47,9 +46,8 @@ static void drawTestCard(Gfx& g) {
     y += -f.descender + 2;
   }
   // ---- column B: bold sizes
-  static const NamedFont bold[] = {{&AtkB13, "B13"}, {&AtkB14, "B14"}, {&AtkB15, "B15"}, {&AtkB17, "B17"}, {&AtkB18, "B18"},
-                                   {&AtkB19, "B19"}, {&AtkB20, "B20"}, {&AtkB22, "B22"}, {&AtkB32, "B32"}, {&AtkB42, "B42"},
-                                   {&AtkB50, "B50"}};
+  static const NamedFont bold[] = {{&AtkB20, "B20"}, {&AtkB22, "B22"}, {&AtkB24, "B24"}, {&AtkB28, "B28"}, {&AtkB34, "B34"},
+                                   {&AtkB46, "B46"}, {&AtkB50, "B50"}, {&AtkB56, "B56"}};
   y = 6;
   for (const NamedFont& nf : bold) {
     const EFont& f = *nf.f;
@@ -61,7 +59,7 @@ static void drawTestCard(Gfx& g) {
   }
   // ---- big digits
   g.drawText(8, 535, "72\xC2\xB0", AtkB136, 0);
-  g.drawText(330, 535, "-8\xC2\xB0/", AtkB84, 0);
+  g.drawText(330, 535, "-8\xC2\xB0/", AtkB170, 0);
   g.drawText(330, 415, "-12\xC2\xB0", AtkB76, 0);
 
   // ---- primitives, right column
@@ -109,18 +107,18 @@ static void drawTestCard(Gfx& g) {
 
   // ---- white on black + spacing + alignment
   g.fillRoundRect(560, 340, 90, 190, 10, 0);  // narrow box at the edge of the right column gap
-  g.drawText(605, 372, "SMART", AtkB19, 15, ALIGN_CENTER, 2);
-  g.drawText(605, 410, "42", AtkB42, 15, ALIGN_CENTER);
-  g.drawText(605, 440, "white", AtkR17, 15, ALIGN_CENTER);
-  g.drawText(605, 470, "on black", AtkR14, 15, ALIGN_CENTER);
-  g.drawText(605, 500, "grey 8", AtkB15, 8, ALIGN_CENTER);
+  g.drawText(605, 372, "SMART", AtkB20, 15, ALIGN_CENTER, 2);
+  g.drawText(605, 410, "42", AtkB46, 15, ALIGN_CENTER);
+  g.drawText(605, 440, "white", AtkR20, 15, ALIGN_CENTER);
+  g.drawText(605, 470, "on black", AtkR20, 15, ALIGN_CENTER);
+  g.drawText(605, 500, "grey 8", AtkB20, 8, ALIGN_CENTER);
   // alignment guide
   g.dashedLine(170, 270, 170, 420, 1, 0, 4, 3);
-  g.drawText(170, 295, "left", AtkR15, 0, ALIGN_LEFT);
-  g.drawText(170, 320, "centre", AtkR15, 0, ALIGN_CENTER);
-  g.drawText(170, 345, "right", AtkR15, 0, ALIGN_RIGHT);
-  g.drawText(170, 375, "SPACED", AtkB14, 0, ALIGN_LEFT, 3);
-  g.drawText(170, 400, "SPACED", AtkB14, 0, ALIGN_RIGHT, 3);
+  g.drawText(170, 295, "left", AtkR20, 0, ALIGN_LEFT);
+  g.drawText(170, 320, "centre", AtkR20, 0, ALIGN_CENTER);
+  g.drawText(170, 345, "right", AtkR20, 0, ALIGN_RIGHT);
+  g.drawText(170, 375, "SPACED", AtkB20, 0, ALIGN_LEFT, 3);
+  g.drawText(170, 400, "SPACED", AtkB20, 0, ALIGN_RIGHT, 3);
 }
 
 int main() {

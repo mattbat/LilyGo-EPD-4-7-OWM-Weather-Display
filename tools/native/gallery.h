@@ -33,24 +33,24 @@ static void galleryIcons(Gfx& g, float scale, int cols, int cellW, int cellH, in
 
 static void galleryPageIcons1(Gfx& g) {
   g.clear(15);
-  g.drawText(12, 22, "Icons at scale 1.0", AtkB17, COL_K);
-  galleryIcons(g, 1.0f, 5, 192, 126, 30, AtkR14);
+  g.drawText(12, 22, "Icons at scale 1.0", AtkB20, COL_K);
+  galleryIcons(g, 1.0f, 5, 192, 126, 30, AtkR20);
 }
 
 static void galleryPageIcons2(Gfx& g) {
   g.clear(15);
-  g.drawText(12, 22, "Icons at scale 0.55", AtkB17, COL_K);
-  galleryIcons(g, 0.55f, 6, 160, 86, 30, AtkR13);
+  g.drawText(12, 22, "Icons at scale 0.55", AtkB20, COL_K);
+  galleryIcons(g, 0.55f, 6, 160, 86, 30, AtkR20);
 }
 
 static void galleryPageIcons3(Gfx& g) {
   g.clear(15);
   // on the forecast background (moon cut-out must use the same bg)
   g.fillRect(0, 10, PANEL_WIDTH, 70, COL_FC);
-  g.drawText(12, 26, "on forecast bg (14), scale 0.45", AtkR14, COL_D);
+  g.drawText(12, 26, "on forecast bg (14), scale 0.45", AtkR20, COL_D);
   for (int i = 0; i < 8; i++) drawIcon(g, kIcons[i].key, 80 + i * 110, 56, 0.45f, COL_FC);
   // standalone helpers
-  g.drawText(12, 110, "Helpers: bolt, moon, battery 0/25/50/80/100 (+ inverted), drops, snowflakes", AtkB15, COL_K);
+  g.drawText(12, 110, "Helpers: bolt, moon, battery 0/25/50/80/100 (+ inverted), drops, snowflakes", AtkB20, COL_K);
   drawBolt(g, 40, 160, 2.0f, COL_K);
   drawBolt(g, 90, 160, 3.0f, COL_M);
   drawMoon(g, 160, 160, 26, COL_K, COL_PAPER);
@@ -63,7 +63,7 @@ static void galleryPageIcons3(Gfx& g) {
   drawSnowflake(g, 810, 160, 10, 3, COL_K);
   drawSnowflake(g, 850, 160, 5, 2, COL_K);
   // one icon across scales 0.3 .. 2.0
-  g.drawText(12, 230, "Thunderstorm at scale 0.3 / 0.55 / 1.0 / 1.5 / 2.0", AtkB15, COL_K);
+  g.drawText(12, 230, "Thunderstorm at scale 0.3 / 0.55 / 1.0 / 1.5 / 2.0", AtkB20, COL_K);
   static const float scales[] = {0.3f, 0.55f, 1.0f, 1.5f, 2.0f};
   int x = 50;
   for (int i = 0; i < 5; i++) {
@@ -96,49 +96,49 @@ static void galleryPageCharts(Gfx& g) {
   fut[0] = 68.4f;
   for (int i = 0; i < 24; i++) rain[i] = (i == 3) ? 0.04f : (i == 4) ? 0.12f : (i == 5) ? 0.02f : 0.0f;
   AxisRange ax = autoRange2(past, 25, fut, 25);
-  g.drawText(cx + 4, 24, "MEASURED \xC2\xB7 last 24 h", AtkB14, COL_D, ALIGN_LEFT, 1);
-  g.drawText(cx + cw - 4, 24, "FORECAST \xC2\xB7 next 24 h", AtkB14, COL_D, ALIGN_RIGHT, 1);
+  g.drawText(cx + 4, 24, "MEASURED \xC2\xB7 last 24 h", AtkB20, COL_D, ALIGN_LEFT, 1);
+  g.drawText(cx + cw - 4, 24, "FORECAST \xC2\xB7 next 24 h", AtkB20, COL_D, ALIGN_RIGHT, 1);
   g.fillRect(nowX, cy - 4, half, 196, COL_FC);
   ChartRect pr = {cx, cy, half, ch}, fr = {nowX, cy, half, ch};
-  drawGrid(g, {cx, cy, cw, ch}, ax, AtkR15);
+  drawGrid(g, {cx, cy, cw, ch}, ax, AtkR20);
   LineStyle ls; ls.thickness = 4; ls.fillArea = true;
   drawLineSeries(g, past, 25, pr, ax, ls);
   LineStyle fs; fs.thickness = 4; fs.dashed = true;
   drawLineSeries(g, fut, 25, fr, ax, fs);
   drawNowLine(g, nowX, cy - 6, cy + 196);
   drawEndDot(g, past, 25, pr, ax, 7);
-  drawHiLoMarker(g, past, 25, pr, ax, true, AtkB19);
-  drawHiLoMarker(g, past, 25, pr, ax, false, AtkB19);
-  drawHiLoMarker(g, fut, 25, fr, ax, true, AtkB19);
-  drawHiLoMarker(g, fut, 25, fr, ax, false, AtkB19);
+  drawHiLoMarker(g, past, 25, pr, ax, true, AtkB20);
+  drawHiLoMarker(g, past, 25, pr, ax, false, AtkB20);
+  drawHiLoMarker(g, fut, 25, fr, ax, true, AtkB20);
+  drawHiLoMarker(g, fut, 25, fr, ax, false, AtkB20);
   // rain band: measured bars (auto-scaled with a 0.05 in floor) + forecast probability bars
   const int ry = cy + ch + 10, rh = 40;
   BarStyle bs;
   drawBars(g, rain, 24, {cx, ry, half, rh}, 0, bs);
   drawProbBars(g, pop, 24, {nowX, ry, half, rh});
-  g.drawText(cx - 8, ry + rh - 2, "rain", AtkR14, COL_D, ALIGN_RIGHT);
+  g.drawText(cx - 8, ry + rh - 2, "rain", AtkR20, COL_D, ALIGN_RIGHT);
   uint16_t none[24] = {0};
   const int ly = ry + rh + 6;
-  g.drawText(cx - 8, ly + 16, "strikes", AtkR14, COL_D, ALIGN_RIGHT);
-  drawLightningRow(g, none, 24, {cx, ly, half, 34}, AtkB13, AtkR14);
+  g.drawText(cx - 8, ly + 16, "strikes", AtkR20, COL_D, ALIGN_RIGHT);
+  drawLightningRow(g, none, 24, {cx, ly, half, 34}, AtkB20, AtkR20);
   HourAxis hx = {nowEpoch - 24 * 3600u, 48, 6, 24, tz};
-  drawHourAxis(g, cx, cw, cy + 196 + 22, hx, AtkR15, AtkB15);
+  drawHourAxis(g, cx, cw, cy + 196 + 22, hx, AtkR20, AtkB20);
 
   // ---- storm: heavy rain auto-scale and lightning row with strikes -----------------------------
   const int y2 = 292;
   uint16_t strikes[24] = {0};
   strikes[19] = 3; strikes[20] = 14; strikes[21] = 9; strikes[22] = 2; strikes[10] = 120;
-  g.drawText(12, y2 - 8, "Bars auto-scale (left: heavy rain + lightning row, right: floor keeps small rain small)", AtkR14, COL_D);
+  g.drawText(12, y2 - 8, "Bars auto-scale (left: heavy rain + lightning row, right: floor keeps small rain small)", AtkR20, COL_D);
   float heavy[24] = {0};
   heavy[18] = 0.15f; heavy[19] = 0.65f; heavy[20] = 0.32f; heavy[21] = 0.18f;
   drawBars(g, heavy, 24, {cx, y2, half, 40}, 0, bs);
-  g.drawText(cx - 8, y2 + 38, "rain", AtkR14, COL_D, ALIGN_RIGHT);
-  g.drawText(cx - 8, y2 + 62, "strikes", AtkR14, COL_D, ALIGN_RIGHT);
-  drawLightningRow(g, strikes, 24, {cx, y2 + 46, half, 34}, AtkB13, AtkR14);
+  g.drawText(cx - 8, y2 + 38, "rain", AtkR20, COL_D, ALIGN_RIGHT);
+  g.drawText(cx - 8, y2 + 62, "strikes", AtkR20, COL_D, ALIGN_RIGHT);
+  drawLightningRow(g, strikes, 24, {cx, y2 + 46, half, 34}, AtkB20, AtkR20);
   float tiny[24] = {0};
   tiny[7] = 0.01f; tiny[8] = 0.03f; tiny[9] = 0.05f; tiny[10] = 0.20f;
   drawBars(g, tiny, 24, {nowX + 30, y2, half - 30, 40}, 0.2f, bs);
-  g.drawText(nowX + 30, y2 + 62, "0.01 in still gets a 3 px stub", AtkR14, COL_D);
+  g.drawText(nowX + 30, y2 + 62, "0.01 in still gets a 3 px stub", AtkR20, COL_D);
 
   // ---- sparklines in tiles ---------------------------------------------------------------------
   const int y3 = 395;
@@ -153,7 +153,7 @@ static void galleryPageCharts(Gfx& g) {
   for (int t = 0; t < 4; t++) {
     int x = 20 + t * 232;
     g.roundRect(x, y3, 218, 130, 8, COL_K, 2);
-    g.drawText(x + 14, y3 + 26, tiles[t].name, AtkB14, COL_D, ALIGN_LEFT, 1);
+    g.drawText(x + 14, y3 + 26, tiles[t].name, AtkB20, COL_D, ALIGN_LEFT, 1);
     drawSparkline(g, tiles[t].d, tiles[t].n, {x + 14, y3 + 42, 190, 70}, 3, tiles[t].fill);
   }
 }

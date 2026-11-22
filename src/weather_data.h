@@ -7,7 +7,7 @@
 #include <math.h>
 
 #define HIST_BUCKETS      24   // measured history, one per clock hour
-#define HOURLY_FC_MAX     72   // hourly forecast entries kept (smart slot looks 72 h ahead)
+#define HOURLY_FC_MAX     72   // hourly forecast entries kept (overnight chart needs tomorrow)
 #define DAILY_FC_MAX      6
 #define COND_LEN          24   // condition text incl. NUL ("Thunderstorms Likely" = 20)
 

@@ -81,9 +81,9 @@ void test_rendering_is_deterministic() {
   }
 }
 
-void test_no_text_smaller_than_16px() {
-  // advance_y (line height) of the smallest permitted font; the 13-15 px fonts all have a smaller one
-  const int minAdvance = AtkR16.advance_y;
+void test_no_text_smaller_than_20px() {
+  // advance_y (line height) of the smallest permitted fonts (20 px regular and bold); no smaller font exists any more
+  const int minAdvance = AtkR20.advance_y < AtkB20.advance_y ? AtkR20.advance_y : AtkB20.advance_y;
   for (int i = 0; i < kSceneCount; i++) {
     setUp();
     renderScene(kScenes[i].name, g);
@@ -98,19 +98,20 @@ void test_no_text_smaller_than_16px() {
 // ------------------------------------------------------------------------------------------ goldens
 struct Golden { const char* name; uint32_t sum; int dark; };
 static const Golden kGolden[] = {
-  {"live_real", 0x60D0C460u, 59937},
-  {"live_storm", 0x931B345Eu, 60379},
-  {"live_raining", 0x84437278u, 60598},
-  {"live_cold", 0xB768E925u, 58900},
-  {"live_hot", 0x704D7E43u, 62201},
-  {"live_offline", 0x51FFD5E0u, 65358},
-  {"live_nohistory", 0x07F9B4E7u, 56811},
-  {"overnight_today", 0xCAFD9A0Cu, 75402},
-  {"overnight_yesterday", 0xB73480E3u, 75505},
-  {"overnight_cold", 0xEFF21CF3u, 74337},
-  {"overnight_hot", 0x5316B3CAu, 75841},
-  {"charge_me", 0xA8418E19u, 24341},
-  {"error", 0xE0D09BBAu, 14245},
+  {"live_real", 0xFCEA1417u, 41988},
+  {"live_storm", 0x1DA3A418u, 234003},
+  {"live_raining", 0xF2A3DDD1u, 233231},
+  {"live_cold", 0xC6C4DC02u, 41604},
+  {"live_hot", 0x2C92E9EEu, 243106},
+  {"live_offline", 0x01682A6Au, 49089},
+  {"live_nohistory", 0x0BC5757Cu, 39710},
+  {"live_rain6h", 0xFC3F952Eu, 43376},
+  {"overnight_today", 0x7FD2F1C9u, 81210},
+  {"overnight_yesterday", 0x0722E79Au, 81093},
+  {"overnight_cold", 0x6F9499FFu, 79351},
+  {"overnight_hot", 0x09E66F16u, 80739},
+  {"charge_me", 0xD4E18531u, 24644},
+  {"error", 0xF7BC3272u, 14568},
 };
 
 void test_goldens() {
@@ -143,38 +144,85 @@ void test_goldens() {
 }
 
 // ------------------------------------------------------------------------------------------ spot checks
-void test_live_header_rule_and_slot_box() {
+void test_live_header_rules_and_top() {
   renderScene("live_real", g);
-  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 48) <= 4 || g.get(x, 47) <= 4);   // 2 px rule at y 47-48
-  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 242) <= 4 || g.get(x, 241) <= 4);
-  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 504) <= 4 || g.get(x, 503) <= 4);
-  // the smart slot is a mostly black box at x 798-936, y 60-232 (text is white on top)
-  TEST_ASSERT_TRUE(darkFraction(798, 60, 935, 231) > 0.75f);
-  TEST_ASSERT_TRUE(darkFraction(800, 62, 806, 230) > 0.99f);
-  // the next stat column stops before it
-  TEST_ASSERT_EQUAL_INT(0, countNot(790, 56, 796, 236, COL_PAPER));
+  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 50) <= 4 || g.get(x, 49) <= 4);     // 2 px rule at y 49-50
+  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 316) <= 4 || g.get(x, 315) <= 4);   // 2 px rule at y 315-316
+  TEST_ASSERT_TRUE(countNot(176, 100, 548, 240, COL_PAPER) > 3000);     // the 170 px temperature
+  TEST_ASSERT_TRUE(countNot(580, 90, 936, 124, COL_PAPER) > 300);       // first right-hand row
+  TEST_ASSERT_TRUE(countNot(24, 6, 440, 40, COL_PAPER) > 300);          // location label
+  TEST_ASSERT_TRUE(countNot(780, 8, 882, 44, COL_PAPER) > 40);          // update time
 }
-void test_slot_box_in_every_state() {
-  const char* names[] = {"live_storm", "live_raining", "live_hot", "live_real", "live_cold"};
-  for (const char* n : names) {
+void test_alert_band_only_when_an_alert_applies() {
+  const char* alerts[] = {"live_storm", "live_raining", "live_hot"};
+  for (const char* n : alerts) {
     setUp(); renderScene(n, g);
-    TEST_ASSERT_TRUE_MESSAGE(darkFraction(798, 60, 935, 231) > 0.7f, n);
+    TEST_ASSERT_TRUE_MESSAGE(darkFraction(0, 318, 959, 539) > 0.88f, n);        // full-width black band (white text on top)
+    TEST_ASSERT_TRUE_MESSAGE(darkFraction(0, 318, 20, 539) > 0.99f, n);
+    TEST_ASSERT_TRUE_MESSAGE(darkFraction(940, 318, 959, 539) > 0.99f, n);
+    TEST_ASSERT_TRUE_MESSAGE(countNot(140, 395, 700, 435, 1) > 400, n);          // white headline inside the band
+    TEST_ASSERT_TRUE_MESSAGE(g.get(480, 317) == COL_PAPER, n);                    // paper between the rule and the band
     TEST_ASSERT_TRUE_MESSAGE(guardsIntact(), n);
   }
+  const char* calm[] = {"live_real", "live_cold", "live_offline", "live_nohistory", "live_rain6h"};
+  for (const char* n : calm) {
+    setUp(); renderScene(n, g);
+    TEST_ASSERT_TRUE_MESSAGE(darkFraction(0, 318, 959, 539) < 0.1f, n);          // chart area, mostly paper
+    TEST_ASSERT_TRUE_MESSAGE(darkFraction(0, 318, 20, 539) < 0.1f, n);
+  }
+  // a calm station with only a UV >= 6 reading gets the UV band
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  d.cur.uv = 6.0f;
+  setUp(); drawLive(g, d, status());
+  TEST_ASSERT_TRUE(darkFraction(0, 318, 959, 539) > 0.88f);
+  d.cur.uv = 5.9f;
+  setUp(); drawLive(g, d, status());
+  TEST_ASSERT_TRUE(darkFraction(0, 318, 959, 539) < 0.1f);
 }
 void test_offline_chip_only_when_offline() {
   renderScene("live_real", g);
-  TEST_ASSERT_TRUE(darkFraction(640, 10, 870, 40) < 0.25f);
+  TEST_ASSERT_TRUE(darkFraction(630, 10, 870, 42) < 0.25f);
   setUp(); renderScene("live_offline", g);
-  TEST_ASSERT_TRUE(darkFraction(660, 10, 860, 40) > 0.55f);
-  // the chip replaces "Updated": the right-hand header text is gone from the left of the chip
-  TEST_ASSERT_EQUAL_INT(0, countNot(420, 10, 560, 40, COL_PAPER));
+  TEST_ASSERT_TRUE(darkFraction(640, 12, 870, 42) > 0.5f);      // black rounded chip with white text
+  TEST_ASSERT_TRUE(darkFraction(640, 12, 650, 42) > 0.95f);     // solid at the left edge of the chip
+  TEST_ASSERT_EQUAL_INT(0, countNot(450, 10, 600, 42, COL_PAPER));   // nothing else in the header between label and chip
 }
+void test_rain_note_only_when_rain_in_last_6_hours() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  for (int i = 0; i < HIST_BUCKETS; i++) d.hist[i].rainIn = 0;
+  d.hist[10].rainIn = 0.5f;                        // rain long ago does not count
+  drawLive(g, d, status());
+  TEST_ASSERT_EQUAL_INT(0, countNot(44, 325, 300, 348, COL_PAPER));
+  d.hist[20].rainIn = 0.12f;
+  setUp(); drawLive(g, d, status());
+  TEST_ASSERT_TRUE(countNot(44, 325, 300, 348, COL_PAPER) > 80);   // "Rain, last 6 h: 0.12 in"
+  setUp(); renderScene("live_rain6h", g);
+  TEST_ASSERT_TRUE(countNot(44, 325, 300, 348, COL_PAPER) > 80);
+}
+void test_rain_bars_measured_solid_forecast_outlined() {
+  renderScene("live_rain6h", g);
+  // measured hour 20 (slot i = 2): solid black bar above the baseline y 488
+  int bx = 44 + (int)(2.5f * 872 / 24);
+  TEST_ASSERT_TRUE(g.get(bx, 484) <= 4);
+  TEST_ASSERT_TRUE(g.get(bx, 470) <= 4);
+  // forecast probability bars right of the now line (x 262) are outlined: paper inside a 30 px bar
+  setUp(); TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  d.hourly[0].precipProbPct = 100; d.hourly[1].precipProbPct = 100;
+  drawLive(g, d, status());
+  int fx = 262 + (int)(1.5f * 872 / 24);
+  TEST_ASSERT_TRUE(g.get(fx, 475) >= 13);                          // paper inside the outlined bar
+  TEST_ASSERT_TRUE(g.get(fx, 459) <= 4 || g.get(fx, 460) <= 4);   // outline at the top of the 30 px bar
+}
+
 void test_overnight_header_bar_is_black() {
   renderScene("overnight_today", g);
-  TEST_ASSERT_TRUE(darkFraction(0, 0, 959, 55) > 0.8f);
-  TEST_ASSERT_TRUE(darkFraction(0, 0, 10, 55) > 0.99f);
-  TEST_ASSERT_TRUE(g.get(480, 60) == COL_PAPER);   // below the bar: paper
+  TEST_ASSERT_TRUE(darkFraction(0, 0, 959, 63) > 0.8f);
+  TEST_ASSERT_TRUE(darkFraction(0, 0, 10, 63) > 0.99f);
+  TEST_ASSERT_TRUE(g.get(480, 66) == COL_PAPER);   // below the bar: paper
+  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 212) <= 4 || g.get(x, 211) <= 4);   // rule under the summary
+  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 500) <= 4 || g.get(x, 499) <= 4);   // footer rule
+  TEST_ASSERT_TRUE(darkFraction(451, 80, 452, 199) > 0.99f);                                         // vertical rule
+  TEST_ASSERT_TRUE(countNot(100, 515, 860, 536, COL_PAPER) > 400);                                   // footer line
   setUp(); renderScene("live_real", g);
   TEST_ASSERT_TRUE(darkFraction(0, 0, 959, 55) < 0.2f);
 }
@@ -247,7 +295,7 @@ void test_missing_history_variants() {
   TEST_ASSERT_TRUE(guardsIntact());
   TEST_ASSERT_NOT_EQUAL(0, withoutHistory);
   // the measured half says so instead of drawing a line
-  TEST_ASSERT_TRUE(countNot(180, 300, 380, 340, COL_PAPER) > 100);
+  TEST_ASSERT_TRUE(countNot(100, 385, 220, 420, COL_PAPER) > 100);
 }
 void test_nan_text_is_intercepted_by_the_hook() {
   TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
@@ -265,9 +313,9 @@ void test_long_condition_text_is_truncated_not_overlapping() {
   snprintf(d.cur.conditions, sizeof d.cur.conditions, "WWWWWWWWWWWWWWWWWWWWWWW");   // 23 wide letters
   drawLive(g, d, status());
   TEST_ASSERT_TRUE(guardsIntact());
-  TEST_ASSERT_EQUAL_INT(0, countNot(474, 196, 485, 236, COL_PAPER));    // nothing between the text and the stat grid
-  // and the feels-like part survived at the right end of the line (some ink near x 380-470)
-  TEST_ASSERT_TRUE(countNot(380, 205, 470, 232, COL_PAPER) > 50);
+  TEST_ASSERT_EQUAL_INT(0, countNot(574, 280, 600, 310, COL_PAPER));     // nothing leaks past x 572 under the stats
+  TEST_ASSERT_TRUE(countNot(30, 262, 572, 300, COL_PAPER) > 400);       // the text is there (shrunk / ellipsized)
+  TEST_ASSERT_TRUE(countNot(500, 285, 572, 296, COL_PAPER) > 15);       // ends in "..." near the limit
 }
 void test_wide_temperatures_do_not_touch_neighbours() {
   const float temps[] = {-100, -12, -9, 0, 5, 99, 100, 123, 199, -40.6f};
@@ -276,25 +324,37 @@ void test_wide_temperatures_do_not_touch_neighbours() {
     d.cur.tempF = t;
     setUp(); drawLive(g, d, status());
     TEST_ASSERT_TRUE(guardsIntact());
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(480, 84, 485, 200, COL_PAPER), "big temp reaches the stat grid");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(0, 60, 13, 200, COL_PAPER), "big temp left of the icon");
-    TEST_ASSERT_TRUE(countNot(146, 84, 470, 190, COL_PAPER) > 400);        // something big is there
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(550, 60, 579, 240, COL_PAPER), "big temp reaches the right-hand rows");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(0, 60, 13, 240, COL_PAPER), "big temp left of the icon");
+    TEST_ASSERT_TRUE(countNot(176, 84, 548, 240, COL_PAPER) > 400);        // something big is there
   }
   // overnight hi / lo
   d.daily[1].highF = -100; d.daily[1].lowF = -120;
   setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
   TEST_ASSERT_TRUE(guardsIntact());
-  TEST_ASSERT_EQUAL_INT(0, countNot(937, 110, 959, 200, COL_PAPER));
+  TEST_ASSERT_EQUAL_INT(0, countNot(937, 110, 959, 205, COL_PAPER));
   d.daily[1].highF = 119; d.daily[1].lowF = 100;
   setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
-  TEST_ASSERT_EQUAL_INT(0, countNot(937, 110, 959, 200, COL_PAPER));
+  TEST_ASSERT_EQUAL_INT(0, countNot(937, 110, 959, 205, COL_PAPER));
+  d.today.highF = 119; d.today.lowF = -100; d.today.rainIn = 12.34f;
+  setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
+  TEST_ASSERT_EQUAL_INT(0, countNot(441, 110, 450, 205, COL_PAPER));      // today row stays left of the vertical rule
 }
 void test_stat_values_stay_in_their_columns() {
   TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
   d.cur.windMph = 123; d.cur.gustMph = 188; d.cur.rainTodayIn = 12.34f; d.cur.pressureInHg = 29.99f;
   d.cur.dewPointF = -100; d.cur.windDirDeg = 337;
   drawLive(g, d, status());
-  TEST_ASSERT_EQUAL_INT(0, countNot(794, 56, 797, 236, COL_PAPER));      // nothing leaks into the gap before the slot
+  TEST_ASSERT_EQUAL_INT(0, countNot(937, 60, 959, 300, COL_PAPER));      // right margin stays clear
+  TEST_ASSERT_EQUAL_INT(0, countNot(550, 60, 579, 300, COL_PAPER));      // and nothing left of the labels
+  TEST_ASSERT_TRUE(guardsIntact());
+}
+void test_missing_values_show_dashes_not_nan() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  d.cur.windMph = NAN; d.cur.rainTodayIn = NAN; d.today.valid = false; d.cur.tempF = NAN;
+  drawLive(g, d, status());
+  TEST_ASSERT_EQUAL(0, screenTextAnomalies());
+  TEST_ASSERT_TRUE(countNot(176, 120, 548, 240, COL_PAPER) > 300);      // "--" in the big font
   TEST_ASSERT_TRUE(guardsIntact());
 }
 void test_live_chart_handles_extreme_ranges() {
@@ -346,11 +406,13 @@ int main() {
   UNITY_BEGIN();
   RUN_TEST(test_every_scene_renders_inside_the_panel);
   RUN_TEST(test_rendering_is_deterministic);
-  RUN_TEST(test_no_text_smaller_than_16px);
+  RUN_TEST(test_no_text_smaller_than_20px);
   RUN_TEST(test_goldens);
-  RUN_TEST(test_live_header_rule_and_slot_box);
-  RUN_TEST(test_slot_box_in_every_state);
+  RUN_TEST(test_live_header_rules_and_top);
+  RUN_TEST(test_alert_band_only_when_an_alert_applies);
   RUN_TEST(test_offline_chip_only_when_offline);
+  RUN_TEST(test_rain_note_only_when_rain_in_last_6_hours);
+  RUN_TEST(test_rain_bars_measured_solid_forecast_outlined);
   RUN_TEST(test_overnight_header_bar_is_black);
   RUN_TEST(test_charge_me_and_error_screens);
   RUN_TEST(test_all_nan_and_empty_data_renders_cleanly);
@@ -361,6 +423,7 @@ int main() {
   RUN_TEST(test_long_condition_text_is_truncated_not_overlapping);
   RUN_TEST(test_wide_temperatures_do_not_touch_neighbours);
   RUN_TEST(test_stat_values_stay_in_their_columns);
+  RUN_TEST(test_missing_values_show_dashes_not_nan);
   RUN_TEST(test_live_chart_handles_extreme_ranges);
   RUN_TEST(test_stale_data_offline_and_old_forecast);
   RUN_TEST(test_charge_me_variants);

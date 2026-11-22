@@ -52,7 +52,7 @@ void test_utf8_invalid_does_not_hang_or_overrun() {
 }
 
 void test_glyph_lookup() {
-  const EFont* all[] = {&AtkR13, &AtkR22, &AtkR44, &AtkB13, &AtkB22, &AtkB50, &AtkB76};
+  const EFont* all[] = {&AtkR20, &AtkR22, &AtkR44, &AtkB20, &AtkB22, &AtkB50, &AtkB76};
   const uint32_t need[] = {65, 122, 48, 57, 32, 126, 0xB0, 0xB7, 0x2191, 0x2193};
   for (const EFont* f : all) {
     TEST_ASSERT_TRUE(f->ascender > 0 && f->descender < 0 && f->advance_y > 0);
@@ -64,7 +64,7 @@ void test_glyph_lookup() {
     TEST_ASSERT_NULL(findGlyph(*f, 0x65E5));
     TEST_ASSERT_NULL(findGlyph(*f, 10));
   }
-  const EFont* big[] = {&AtkB84, &AtkB136};  // digits, degree, minus, slash only
+  const EFont* big[] = {&AtkB136, &AtkB170};  // digits, degree, minus, slash only
   for (const EFont* f : big) {
     for (uint32_t c = 48; c <= 57; c++) TEST_ASSERT_NOT_NULL(findGlyph(*f, c));
     TEST_ASSERT_NOT_NULL(findGlyph(*f, 0xB0));
@@ -75,12 +75,15 @@ void test_glyph_lookup() {
 }
 
 void test_sizes_grow() {
-  TEST_ASSERT_TRUE(measureText(AtkB84, "1").width > 0);
-  TEST_ASSERT_TRUE(measureText(AtkB136, "7").width > measureText(AtkB84, "7").width);
-  TEST_ASSERT_TRUE(measureText(AtkB136, "7").inkAscent > measureText(AtkB84, "7").inkAscent);
-  const EFont* order[] = {&AtkR13, &AtkR14, &AtkR15, &AtkR16, &AtkR17, &AtkR18, &AtkR20, &AtkR22, &AtkR44};
-  for (int i = 1; i < 9; i++)
+  TEST_ASSERT_TRUE(measureText(AtkB136, "1").width > 0);
+  TEST_ASSERT_TRUE(measureText(AtkB170, "7").width > measureText(AtkB136, "7").width);
+  TEST_ASSERT_TRUE(measureText(AtkB170, "7").inkAscent > measureText(AtkB136, "7").inkAscent);
+  const EFont* order[] = {&AtkR20, &AtkR22, &AtkR24, &AtkR28, &AtkR44};
+  for (int i = 1; i < 5; i++)
     TEST_ASSERT_TRUE(measureText(*order[i], "Wind 12").width >= measureText(*order[i - 1], "Wind 12").width);
+  const EFont* bold[] = {&AtkB20, &AtkB22, &AtkB24, &AtkB28, &AtkB34, &AtkB46, &AtkB50, &AtkB56, &AtkB76};
+  for (int i = 1; i < 9; i++)
+    TEST_ASSERT_TRUE(measureText(*bold[i], "Wind 12").width >= measureText(*bold[i - 1], "Wind 12").width);
 }
 
 void test_measure_width_monotonic_and_spacing() {
@@ -92,21 +95,21 @@ void test_measure_width_monotonic_and_spacing() {
   TEST_ASSERT_EQUAL_INT(w3 + 2 * 4, measureText(AtkR22, "abc", 4).width);  // between glyphs only
   TEST_ASSERT_EQUAL_INT(w1, measureText(AtkR22, "a", 9).width);
   TEST_ASSERT_TRUE(measureText(AtkB22, "Wind").width > measureText(AtkR22, "Wind").width);
-  TextSize m = measureText(AtkB42, "Hg");
-  TEST_ASSERT_EQUAL_INT(AtkB42.ascender, m.ascent);
-  TEST_ASSERT_EQUAL_INT(-AtkB42.descender, m.descent);
+  TextSize m = measureText(AtkB46, "Hg");
+  TEST_ASSERT_EQUAL_INT(AtkB46.ascender, m.ascent);
+  TEST_ASSERT_EQUAL_INT(-AtkB46.descender, m.descent);
   TEST_ASSERT_TRUE(m.inkAscent > 0 && m.inkAscent <= m.ascent);
   TEST_ASSERT_TRUE(m.inkDescent > 0 && m.inkDescent <= m.descent);
-  TEST_ASSERT_EQUAL_INT(0, measureText(AtkB42, "H").inkDescent);
-  TEST_ASSERT_EQUAL_INT(0, measureText(AtkB42, nullptr).width);
+  TEST_ASSERT_EQUAL_INT(0, measureText(AtkB46, "H").inkDescent);
+  TEST_ASSERT_EQUAL_INT(0, measureText(AtkB46, nullptr).width);
 }
 
 void test_special_glyph_widths_utf8() {
-  TEST_ASSERT_TRUE(measureText(AtkR18, "72\xC2\xB0").width > measureText(AtkR18, "72").width);
-  TEST_ASSERT_TRUE(measureText(AtkR18, "\xE2\x86\x91").width > 0);
-  TEST_ASSERT_TRUE(measureText(AtkR18, "\xC2\xB7").width > 0);
+  TEST_ASSERT_TRUE(measureText(AtkR20, "72\xC2\xB0").width > measureText(AtkR20, "72").width);
+  TEST_ASSERT_TRUE(measureText(AtkR20, "\xE2\x86\x91").width > 0);
+  TEST_ASSERT_TRUE(measureText(AtkR20, "\xC2\xB7").width > 0);
   const char* four = "\xC2\xB0\xC2\xB7\xE2\x86\x91\xE2\x86\x93";  // 4 code points, 10 bytes
-  TEST_ASSERT_EQUAL_INT(measureText(AtkR18, four).width + 3 * 5, measureText(AtkR18, four, 5).width);
+  TEST_ASSERT_EQUAL_INT(measureText(AtkR20, four).width + 3 * 5, measureText(AtkR20, four, 5).width);
   g.drawText(50, 100, "\xC2\xB0", AtkR22, 0);
   TEST_ASSERT_TRUE(inkBox().n > 5);
   g.clear(15);
@@ -138,10 +141,10 @@ void test_alignment_math() {
 }
 
 void test_baseline_placement() {
-  g.drawText(100, 200, "H", AtkB42, 0);
+  g.drawText(100, 200, "H", AtkB46, 0);
   Box b = inkBox();
   TEST_ASSERT_EQUAL_INT(200 - 1, b.y1);  // flat-bottomed letter sits on the baseline
-  TEST_ASSERT_EQUAL_INT(200 - measureText(AtkB42, "H").inkAscent, b.y0);
+  TEST_ASSERT_EQUAL_INT(200 - measureText(AtkB46, "H").inkAscent, b.y0);
 }
 
 void test_letter_spacing_draw() {
@@ -157,24 +160,24 @@ void test_letter_spacing_draw() {
 void test_missing_glyph_safe() {
   g.drawText(10, 100, "\xE6\x97\xA5\xE6\x9C\xAC", AtkR22, 0);  // CJK: falls back to question mark
   g.drawText(10, 200, "\xE6\x97\xA5 abc", AtkB136, 0);          // limited font: falls back to space
-  g.drawText(10, 300, "\xFF\xFE\xC2", AtkR13, 0);               // invalid UTF-8
-  g.drawText(10, 300, "", AtkR13, 0);
-  g.drawText(10, 300, nullptr, AtkR13, 0);
+  g.drawText(10, 300, "\xFF\xFE\xC2", AtkR20, 0);               // invalid UTF-8
+  g.drawText(10, 300, "", AtkR20, 0);
+  g.drawText(10, 300, nullptr, AtkR20, 0);
   TEST_ASSERT_TRUE(measureText(AtkR22, "\xE6\x97\xA5").width == measureText(AtkR22, "?").width);
   TEST_ASSERT_TRUE(measureText(AtkB136, "A").width == measureText(AtkB136, " ").width);
   TEST_ASSERT_TRUE(inkBox().n > 0);
 }
 
 void test_text_clipped_at_edges() {
-  g.drawText(-30, 30, "Clipped left", AtkB42, 0);
-  g.drawText(PANEL_WIDTH - 30, 100, "Clipped right", AtkB42, 0);
-  g.drawText(10, -5, "Top", AtkB42, 0);
-  g.drawText(10, PANEL_HEIGHT + 10, "Bottom", AtkB42, 0);
-  g.drawText(10, PANEL_HEIGHT - 3, "Edge", AtkB42, 0);
+  g.drawText(-30, 30, "Clipped left", AtkB46, 0);
+  g.drawText(PANEL_WIDTH - 30, 100, "Clipped right", AtkB46, 0);
+  g.drawText(10, -5, "Top", AtkB46, 0);
+  g.drawText(10, PANEL_HEIGHT + 10, "Bottom", AtkB46, 0);
+  g.drawText(10, PANEL_HEIGHT - 3, "Edge", AtkB46, 0);
   g.drawText(-2000, 100, "Far", AtkB22, 0, ALIGN_RIGHT);
   TEST_ASSERT_TRUE(inkBox().n > 0);
   Gfx none;  // a Gfx without a framebuffer must not crash either
-  TEST_ASSERT_EQUAL_INT(0, none.drawText(0, 0, "x", AtkR13, 0));
+  TEST_ASSERT_EQUAL_INT(0, none.drawText(0, 0, "x", AtkR20, 0));
 }
 
 void test_antialiasing_blends() {
@@ -209,9 +212,9 @@ void test_antialiasing_blends() {
 }
 
 void test_all_fonts_render() {
-  const EFont* all[] = {&AtkR13, &AtkR14, &AtkR15, &AtkR16, &AtkR17, &AtkR18, &AtkR20, &AtkR22, &AtkR44,
-                        &AtkB13, &AtkB14, &AtkB15, &AtkB17, &AtkB18, &AtkB19, &AtkB20, &AtkB22, &AtkB32,
-                        &AtkB42, &AtkB50, &AtkB76, &AtkB84, &AtkB136};
+  const EFont* all[] = {&AtkR20, &AtkR22, &AtkR24, &AtkR28, &AtkR44,
+                        &AtkB20, &AtkB22, &AtkB24, &AtkB28, &AtkB34, &AtkB46, &AtkB50, &AtkB56, &AtkB76,
+                        &AtkB136, &AtkB170};
   for (const EFont* f : all) {
     g.clear(15);
     g.drawText(20, 300, "-12\xC2\xB0/8", *f, 0);

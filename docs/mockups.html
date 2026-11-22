@@ -77,6 +77,148 @@ h2.divider { border-top: 1px solid var(--rule); padding-top: 32px; color: var(--
   </section>
 
   <section>
+    <div class="eyebrow">Live, G1 top + G2 chart · iteration H1</div>
+    <h2>Times every 3 hours</h2>
+    <p class="lede">G1's top half, slightly shorter, above G2's chart: the last 12 hours and the next 12. Times every 3 hours with tick marks, the high and low labelled, NOW in bold.</p>
+    <div class="device"><svg id="optH1" viewBox="0 0 960 540" role="img" aria-label="Live iteration H1"></svg></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, G1 top + G2 chart · iteration H2</div>
+    <h2>Labels that say when</h2>
+    <p class="lede">Fewer time labels (every 6 hours), but the high and low say when they happen ("69° 1 PM"), and two short notes explain the rain bars. Faint vertical lines mark each 6 hours.</p>
+    <div class="device"><svg id="optH2" viewBox="0 0 960 540" role="img" aria-label="Live iteration H2"></svg></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, G1 top + G2 chart · iteration H3</div>
+    <h2>More forecast, temperatures on the line</h2>
+    <p class="lede">The chart shifts forward: the last 6 hours and the next 18. Every 3 hours the temperature is printed on the line and the time under it, so you can read the afternoon and evening without guessing from the curve.</p>
+    <div class="device"><svg id="optH3" viewBox="0 0 960 540" role="img" aria-label="Live iteration H3"></svg></div>
+    <h3 class="sub">Same layout after a rainy morning: solid bars are rain that fell in the last 6 hours, outlined bars are the chance of rain ahead</h3>
+    <div class="device"><svg id="optH3r" viewBox="0 0 960 540" role="img" aria-label="Live iteration H3 with recent rain"></svg></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, G1 top + G2 chart · alert</div>
+    <h2>Any of the above, with an alert</h2>
+    <p class="lede">When there's lightning, rain falling now or high UV, the black band takes the chart's place until it clears.</p>
+    <div class="device"><svg id="optH4" viewBox="0 0 960 540" role="img" aria-label="Live iteration with alert"></svg></div>
+    <div class="spec">
+      <div><h3>On screen in all H versions</h3><ul><li>Temperature, conditions</li><li>Wind, rain today, humidity</li><li>Chart: measured (solid) and forecast (dashed) temperature, rain bars (solid = fell, outlined = chance)</li><li>Alert band only when needed</li></ul></div>
+      <div><h3>Gone</h3><ul><li>Sub-lines, pressure, feels-like</li><li>Smart slot (replaced by the alert band)</li><li>Bottom info line</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, glanceable · option G1</div>
+    <h2>Three numbers and later today</h2>
+    <p class="lede">One huge temperature, three readings with no sub-lines, and four forecast slots for the next 12 hours. No charts. When something needs attention (lightning, rain falling now, high UV), a black alert band replaces the forecast slots. Smallest text is 22 px.</p>
+    <h3 class="sub">Normal</h3>
+    <div class="device"><svg id="optG1a" viewBox="0 0 960 540" role="img" aria-label="Live option G1, calm"></svg></div>
+    <h3 class="sub">With an alert</h3>
+    <div class="device"><svg id="optG1b" viewBox="0 0 960 540" role="img" aria-label="Live option G1, storm alert"></svg></div>
+    <div class="spec">
+      <div><h3>On screen</h3><ul><li>Temperature, conditions</li><li>Wind, rain today, humidity</li><li>Next 12 hours: 4 slots with icon and temperature</li><li>Alert band only when needed</li></ul></div>
+      <div><h3>Gone</h3><ul><li>All sub-lines (gusts, direction, dew point, yesterday, trend)</li><li>Pressure</li><li>Both charts</li><li>Bottom info line</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, glanceable · option G2</div>
+    <h2>Temperature and one clean chart</h2>
+    <p class="lede">Temperature, high/low and two readings on top. Below, one large chart of the last 12 hours and the next 12, with no grid and only three labels: the high, the low, and now. Rain shows as bars under the line.</p>
+    <div class="device"><svg id="optG2" viewBox="0 0 960 540" role="img" aria-label="Live option G2"></svg></div>
+    <div class="spec">
+      <div><h3>On screen</h3><ul><li>Temperature, conditions, today's high and low</li><li>Wind, rain today</li><li>12 h measured + 12 h forecast temperature, rain bars</li></ul></div>
+      <div><h3>Gone</h3><ul><li>Humidity, pressure, all sub-lines</li><li>Chart grid and axis labels</li><li>Smart slot (an alert band can replace the chart when needed)</li><li>Bottom info line</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, glanceable · option G3</div>
+    <h2>Four big readings and a one-line outlook</h2>
+    <p class="lede">Temperature on the left, four readings on the right in large type with no sub-lines (pressure trend is just an arrow). A single sentence at the bottom says what's coming, or turns into the black alert band.</p>
+    <h3 class="sub">Normal</h3>
+    <div class="device"><svg id="optG3a" viewBox="0 0 960 540" role="img" aria-label="Live option G3, calm"></svg></div>
+    <h3 class="sub">With an alert</h3>
+    <div class="device"><svg id="optG3b" viewBox="0 0 960 540" role="img" aria-label="Live option G3, storm alert"></svg></div>
+    <div class="spec">
+      <div><h3>On screen</h3><ul><li>Temperature, conditions, feels-like</li><li>Wind, rain today, humidity, pressure with a trend arrow</li><li>One outlook sentence, or an alert</li></ul></div>
+      <div><h3>Gone</h3><ul><li>All charts</li><li>Gusts, direction, dew point, yesterday's rain</li><li>Bottom info line</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, larger text · option L1</div>
+    <h2>Same layout, bigger</h2>
+    <p class="lede">The current live screen with every piece of text enlarged. Smallest text is 20 px (it was 16-17 px). Units move into the labels so the big numbers have room. Lightning shows only in the smart slot.</p>
+    <h3 class="sub">A quiet afternoon</h3>
+    <div class="device"><svg id="optL1a" viewBox="0 0 960 540" role="img" aria-label="Live option L1, calm"></svg></div>
+    <h3 class="sub">An evening thunderstorm</h3>
+    <div class="device"><svg id="optL1b" viewBox="0 0 960 540" role="img" aria-label="Live option L1, storm"></svg></div>
+    <div class="spec">
+      <div><h3>Kept</h3><ul><li>Big temperature, conditions, feels-like</li><li>Wind, rain today, humidity, pressure, each with one sub-line</li><li>Smart slot</li><li>48 h measured + forecast chart with rain bars</li><li>Sunrise, sunset, rain this month</li></ul></div>
+      <div><h3>Dropped</h3><ul><li>Date in the header (time of update stays)</li><li>Lightning row under the chart (the smart slot still shows strikes)</li><li>UV, rain this year and station battery on the bottom line (battery returns when low)</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, larger text · option L2</div>
+    <h2>Stats row</h2>
+    <p class="lede">A bigger temperature and a wide smart slot on top, the four readings in one row of large tiles, and a short chart at the bottom. Smallest text is 20 px.</p>
+    <div class="device"><svg id="optL2" viewBox="0 0 960 540" role="img" aria-label="Live option L2"></svg></div>
+    <div class="spec">
+      <div><h3>Kept</h3><ul><li>Big temperature (150 px), conditions, feels-like</li><li>Wind, rain today, humidity, pressure with sub-lines</li><li>Smart slot, larger</li><li>48 h temperature line with rain bars, smaller</li></ul></div>
+      <div><h3>Dropped</h3><ul><li>Date in the header</li><li>Chart gridlines and high/low labels (only the end temperatures are printed)</li><li>Lightning row</li><li>The whole bottom info line (sunrise/sunset, rain month/year, UV, battery)</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Live, larger text · option L3</div>
+    <h2>Next hours</h2>
+    <p class="lede">The top half matches L1. The 48 h chart is replaced by the next 12 hours as six large slots, each with an icon, temperature and rain chance. The last 24 hours become one line of text. Smallest text is 22 px.</p>
+    <div class="device"><svg id="optL3" viewBox="0 0 960 540" role="img" aria-label="Live option L3"></svg></div>
+    <div class="spec">
+      <div><h3>Kept</h3><ul><li>Everything in L1's top half</li><li>Forecast for the next 12 hours (every 2 hours)</li><li>Last 24 h high, low and rain as text</li></ul></div>
+      <div><h3>Dropped</h3><ul><li>The 48 h chart, measured and forecast</li><li>Hourly rain bars and the lightning row</li><li>Sunrise/sunset, rain month/year, UV, battery (battery returns when low)</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Overnight, larger text · option N1</div>
+    <h2>Tomorrow first</h2>
+    <p class="lede">Tomorrow's forecast fills most of the screen, because that's what you want to know at night. Today shrinks to three big numbers. The hourly chart becomes six large time slots. Smallest text is 22 px (it was 16-17 px).</p>
+    <div class="device"><svg id="optN1" viewBox="0 0 960 540" role="img" aria-label="Overnight option N1"></svg></div>
+    <div class="spec">
+      <div><h3>Kept</h3><ul><li>Tomorrow: icon, high/low, conditions, rain chance, gusts</li><li>Today: high, low, rain</li><li>Tomorrow by time of day (6 slots)</li><li>Sunrise and last-data time</li></ul></div>
+      <div><h3>Dropped</h3><ul><li>Times of today's high and low</li><li>Today's peak gust and "last reading" row</li><li>Today's temperature sparkline</li><li>Rain this month/year</li><li>Lightning and station battery, unless there is something to report (they replace the Rain row or the bottom line when needed)</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Overnight, larger text · option N2</div>
+    <h2>Two big columns</h2>
+    <p class="lede">Same structure as today's screen, without the charts. Every value is 44-64 px and every label 24-26 px, so it reads from across the room. Smallest text is 22 px.</p>
+    <div class="device"><svg id="optN2" viewBox="0 0 960 540" role="img" aria-label="Overnight option N2"></svg></div>
+    <div class="spec">
+      <div><h3>Kept</h3><ul><li>Today: high, low, rain, peak gust</li><li>Tomorrow: icon, high/low, conditions, rain chance, gusts</li><li>Sunrise and last-data time</li></ul></div>
+      <div><h3>Dropped</h3><ul><li>Both charts (today's sparkline and tomorrow's hourly line)</li><li>Times of today's high, low and gust</li><li>"Last reading" row</li><li>Rain this month/year</li><li>Lightning and station battery unless there is something to report</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Chosen · Overnight, larger text · option N3</div>
+    <h2>Big chart</h2>
+    <p class="lede">Keeps a chart, but only one: tomorrow from 5 AM to 10 PM, full width, with large labels and rain chances printed over the bars. Today becomes one row of three numbers. Smallest text is 20 px.</p>
+    <div class="device"><svg id="optN3" viewBox="0 0 960 540" role="img" aria-label="Overnight option N3"></svg></div>
+    <div class="spec">
+      <div><h3>Kept</h3><ul><li>Today: high, low, rain</li><li>Tomorrow: icon, high/low, conditions</li><li>Tomorrow's hourly temperature and rain chance, as a large chart</li><li>Sunrise and last-data time</li></ul></div>
+      <div><h3>Dropped</h3><ul><li>Times of today's high and low</li><li>Today's peak gust, lightning and "last reading" row</li><li>Today's sparkline</li><li>Rain this month/year and station battery (unless low)</li></ul></div>
+    </div>
+  </section>
+
+  <section>
     <div class="eyebrow">Low battery · below 3.3 V</div>
     <h2>Charge me</h2>
     <p class="lede">When the 18650 drops below 3.3 V, the board draws this screen and stops connecting to WiFi. Every two hours it wakes for a fraction of a second to check the voltage, and returns to normal once the battery is charged.</p>
@@ -508,6 +650,432 @@ h2.divider { border-top: 1px solid var(--rule); padding-top: 32px; color: var(--
     s += T(480, 476, 'Updates restart on their own once the battery is charged.', 20, { a: 'middle', fill: D });
     return s;
   }
+  // ---------- Overnight, larger text ----------
+  const tomHours = [], tomTemp = [], tomPop = [];
+  for (let h = 5; h <= 22; h++) { tomHours.push(h); tomTemp.push(50 + 12 * Math.sin(Math.PI * (h - 5) / 18) - (h > 14 ? (h - 14) * 0.4 : 0)); tomPop.push(h < 12 ? 65 - (h - 5) * 2 : h < 15 ? 30 : 15); }
+  function nightHeader(s) {
+    s += R(0, 0, 960, 64, K);
+    s += T(24, 42, 'HIGHGARDEN - STARK ST. TEMPEST', 22, { w: 700, ls: 2, fill: P });
+    s += moon(668, 32, 13, P, K);
+    s += T(936, 42, 'Paused until 5 AM', 24, { a: 'end', fill: P, w: 700 });
+    return s;
+  }
+  function nightFooter(s, txt) {
+    s += Ln(24, 500, 936, 500, K, 2);
+    s += T(480, 530, txt, 22, { a: 'middle' });
+    return s;
+  }
+
+  function optN1() {
+    let s = R(0, 0, 960, 540, P);
+    s = nightHeader(s);
+    // tomorrow block
+    s += T(28, 104, 'TOMORROW · SUN NOV 22', 24, { w: 700, ls: 2 });
+    s += icon('rain', 96, 180, 1.15);
+    s += T(186, 232, '62°', 120, { w: 700 }) + T(388, 232, '/ 50°', 60, { w: 400 });
+    s += T(28, 296, 'Rain likely, mostly AM', 34, { w: 700 });
+    s += T(28, 336, '65% chance · gusts to 25 mph', 28);
+    s += Ln(600, 84, 600, 350, K, 2);
+    // today block
+    s += T(628, 104, 'TODAY', 24, { w: 700, ls: 2 });
+    [['High', '71°'], ['Low', '52°'], ['Rain', '0.12 in']].forEach((r, i) => {
+      const y = 166 + i * 70;
+      s += T(628, y, r[0], 28) + T(936, y + 4, r[1], 48, { w: 700, a: 'end' });
+      if (i < 2) s += Ln(628, y + 22, 936, y + 22, L, 1);
+    });
+    s += Ln(24, 362, 936, 362, K, 2);
+    // six time slots
+    const slots = [[6, '6 AM'], [9, '9 AM'], [12, '12 PM'], [15, '3 PM'], [18, '6 PM'], [21, '9 PM']];
+    const sw = 912 / 6;
+    slots.forEach((sl, i) => {
+      const x = 24 + i * sw, mid = x + sw / 2, k = sl[0] - 5;
+      if (i) s += Ln(x, 376, x, 488, L, 1);
+      s += T(mid, 400, sl[1], 24, { a: 'middle', w: 700 });
+      s += T(mid, 450, `${Math.round(tomTemp[k])}°`, 44, { a: 'middle', w: 700 });
+      s += T(mid, 484, `${tomPop[k]}% rain`, 22, { a: 'middle' });
+    });
+    return nightFooter(s, 'Sunrise 6:59 AM  ·  Last data 10:00 PM');
+  }
+
+  function optN2() {
+    let s = R(0, 0, 960, 540, P);
+    s = nightHeader(s);
+    // today column
+    s += T(28, 106, 'TODAY', 26, { w: 700, ls: 2 });
+    [['High', '71°'], ['Low', '52°'], ['Rain', '0.12 in'], ['Peak gust', '22 mph']].forEach((r, i) => {
+      const y = 172 + i * 84;
+      s += T(28, y, r[0], 28) + T(440, y + 6, r[1], 56, { w: 700, a: 'end' });
+      if (i < 3) s += Ln(28, y + 28, 440, y + 28, L, 1);
+    });
+    s += Ln(474, 84, 474, 484, K, 2);
+    // tomorrow column
+    s += T(508, 106, 'TOMORROW · SUN', 26, { w: 700, ls: 2 });
+    s += icon('rain', 572, 176, 0.95);
+    s += T(650, 210, '62°', 84, { w: 700 }) + T(806, 210, '/ 50°', 48);
+    s += T(508, 286, 'Rain likely', 40, { w: 700 });
+    s += T(508, 326, 'mostly in the morning', 26);
+    [['Rain', '65%'], ['Gusts', '25 mph']].forEach((r, i) => {
+      const y = 396 + i * 70;
+      s += T(508, y, r[0], 28) + T(936, y + 6, r[1], 48, { w: 700, a: 'end' });
+      if (i < 1) s += Ln(508, y + 24, 936, y + 24, L, 1);
+    });
+    return nightFooter(s, 'Sunrise 6:59 AM  ·  Last data 10:00 PM');
+  }
+
+  function optN3() {
+    let s = R(0, 0, 960, 540, P);
+    s = nightHeader(s);
+    // today row
+    s += T(28, 102, 'TODAY', 22, { w: 700, ls: 2 });
+    [['High', '71°'], ['Low', '52°'], ['Rain', '0.12″']].forEach((r, i) => {
+      const x = 28 + i * 140;
+      s += T(x, 132, r[0], 22) + T(x, 184, r[1], 50, { w: 700 });
+    });
+    s += Ln(452, 80, 452, 200, K, 2);
+    // tomorrow summary
+    s += T(480, 102, 'TOMORROW · SUN', 22, { w: 700, ls: 2 });
+    s += icon('rain', 532, 160, 0.75);
+    s += T(596, 186, '62°', 76, { w: 700 }) + T(732, 186, '/ 50°', 44);
+    s += T(936, 132, 'Rain likely', 28, { w: 700, a: 'end' });
+    s += Ln(24, 212, 936, 212, K, 2);
+    // big chart
+    const cx = 84, cy = 252, cw = 840, ch = 140;
+    [45, 50, 55, 60].forEach(v => { const y = cy + ch - (v - 42) / (66 - 42) * ch; s += Ln(cx, y, cx + cw, y, L, 1) + T(cx - 10, y + 7, `${v}°`, 20, { a: 'end' }); });
+    const fp = pts(tomTemp, cx, cy, cw, ch, 42, 66);
+    s += poly(fp, K, 4, '12 8');
+    let hi = 0; tomTemp.forEach((v, i) => { if (v > tomTemp[hi]) hi = i; });
+    s += `<circle cx="${fp[hi][0]}" cy="${fp[hi][1]}" r="6" fill="${K}"/>` + R(fp[hi][0] - 34, fp[hi][1] - 44, 68, 32, P) + T(fp[hi][0], fp[hi][1] - 18, `${Math.round(tomTemp[hi])}°`, 28, { w: 700, a: 'middle' });
+    const ry = 404, rh = 48, bw = cw / 18;
+    s += Ln(cx, ry + rh, cx + cw, ry + rh, K, 1);
+    tomPop.forEach((v, k) => { const h = Math.max(5, v / 100 * rh); s += R(cx + k * bw + 3, ry + rh - h, bw - 6, h, P, { stroke: K, sw: 2 }); });
+    [0, 3, 6, 9, 12, 15].forEach(k => s += T(cx + k * bw + bw / 2, ry - 4, `${tomPop[k]}%`, 20, { a: 'middle', w: 700 }));
+    s += T(cx - 10, ry + rh, 'rain', 20, { a: 'end' });
+    [[0, '5 AM'], [4, '9 AM'], [8, '1 PM'], [12, '5 PM'], [16, '9 PM']].forEach(([k, l]) => s += T(cx + k * bw + bw / 2, 482, l, 22, { a: 'middle' }));
+    return nightFooter(s, 'Sunrise 6:59 AM  ·  Last data 10:00 PM');
+  }
+  // ---------- Live, larger text ----------
+  function triUp(x, y, up) { return up ? `<polygon points="${x},${y - 14} ${x - 8},${y} ${x + 8},${y}" fill="${K}"/>` : `<polygon points="${x},${y} ${x - 8},${y - 14} ${x + 8},${y - 14}" fill="${K}"/>`; }
+  function liveHeader(s, sc) {
+    s += T(24, 38, 'HIGHGARDEN - STARK ST. TEMPEST', 22, { w: 700, ls: 2 });
+    s += T(882, 38, sc.time.replace(/^.*· /, ''), 24, { a: 'end' });
+    s += battery(894, 23, 0.8);
+    s += Ln(24, 54, 936, 54, K, 2);
+    return s;
+  }
+  function bigSlot(s, sc, x, y, w, h, wide) {
+    s += R(x, y, w, h, K, { rx: 10 });
+    const sl = sc.slot;
+    if (!wide) {
+      s += T(x + w / 2, y + 30, sl.label, 20, { w: 700, fill: P, ls: 1.5, a: 'middle' });
+      s += T(x + w / 2, y + 96, sl.big, 56, { w: 700, fill: P, a: 'middle' });
+      s += T(x + w / 2, y + 140, sl.sub1, 22, { w: 700, fill: P, a: 'middle' });
+      s += T(x + w / 2, y + 170, sl.sub2, 22, { w: 700, fill: P, a: 'middle' });
+    } else {
+      s += T(x + 24, y + 38, sl.label, 22, { w: 700, fill: P, ls: 2 });
+      if (sl.kind === 'bolt') s += bolt(x + 42, y + 104, 3, P);
+      else for (let i = 0; i < 3; i++) s += Ln(x + 30 + i * 14, y + 86, x + 22 + i * 14, y + 116, P, 4);
+      s += T(x + 84, y + 124, sl.big, 72, { w: 700, fill: P });
+      s += T(x + w - 24, y + 104, sl.sub1, 26, { w: 700, fill: P, a: 'end' });
+      s += T(x + w - 24, y + 138, sl.sub2, 24, { w: 700, fill: P, a: 'end' });
+    }
+    return s;
+  }
+  function liveTopL(s, sc) {
+    s += sc.icon === 'storm' ? stormIcon(78, 128, 1.0) : icon(sc.icon, 78, 132, 1.0);
+    s += T(142, 200, sc.temp, 136, { w: 700 });
+    s += T(28, 246, sc.cond.replace('  ·  ', ' · '), 26);
+    const lab = [['WIND · mph', 0], ['RAIN TODAY · in', 1], ['HUMIDITY · %', 2], ['PRESSURE · in', 3]];
+    sc.stats.forEach((st, i) => {
+      const x = 478 + (i % 2) * 160, y = 64 + Math.floor(i / 2) * 98;
+      s += T(x, y + 18, lab[i][0], 18, { w: 700, ls: 1 });
+      s += T(x, y + 68, st[1], 54, { w: 700 });
+      const sub = st[3].replace(/ ?[↓↑]$/, '');
+      s += T(x, y + 94, sub, 20);
+      if (/[↓↑]$/.test(st[3])) s += triUp(x + sub.length * 9.6 + 14, y + 92, st[3].endsWith('↑'));
+    });
+    s = bigSlot(s, sc, 798, 64, 138, 188, false);
+    s += Ln(24, 264, 936, 264, K, 2);
+    return s;
+  }
+  function optL1(sc) {
+    let s = R(0, 0, 960, 540, P);
+    s = liveHeader(s, sc);
+    s = liveTopL(s, sc);
+    const cx = 70, cy = 304, cw = 866, ch = 96, half = cw / 2, nowX = cx + half, bw = half / 24;
+    const all = sc.past.concat(sc.future);
+    const mn = Math.floor((Math.min(...all) - 3) / 10) * 10, mx = Math.ceil((Math.max(...all) + 3) / 10) * 10;
+    s += T(cx, 292, 'MEASURED · 24 h', 20, { w: 700, ls: 1 });
+    s += T(cx + cw, 292, 'FORECAST · 24 h', 20, { w: 700, ls: 1, a: 'end' });
+    for (let v = mn + 10; v < mx; v += 10) { const y = cy + ch - (v - mn) / (mx - mn) * ch; s += Ln(cx, y, cx + cw, y, L, 1) + T(cx - 8, y + 7, `${v}°`, 20, { a: 'end' }); }
+    const pp = pts(sc.past, cx, cy, half, ch, mn, mx), fp = pts(sc.future, nowX, cy, half, ch, mn, mx);
+    s += area(pp, cy + ch, '#e6e6e1') + poly(pp, K, 4) + poly(fp, K, 4, '12 8');
+    s += Ln(nowX, cy - 6, nowX, 452, K, 2) + `<circle cx="${nowX}" cy="${pp[24][1]}" r="8" fill="${K}"/>`;
+    let hi = 0, lo = 0; sc.past.forEach((v, i) => { if (v > sc.past[hi]) hi = i; if (v < sc.past[lo]) lo = i; });
+    [[hi, -14], [lo, 30]].forEach(([i, dy]) => { if (i > 1 && i < 23) s += `<circle cx="${pp[i][0]}" cy="${pp[i][1]}" r="5" fill="${K}"/>` + R(pp[i][0] - 28, pp[i][1] + dy - 22, 56, 28, P) + T(pp[i][0], pp[i][1] + dy, `${Math.round(sc.past[i])}°`, 22, { w: 700, a: 'middle' }); });
+    const ry = 410, rh = 40, rmax = Math.max(0.05, ...sc.rain);
+    s += Ln(cx, ry + rh, cx + cw, ry + rh, K, 1);
+    sc.rain.forEach((r, i) => { if (r > 0) { const h = Math.max(4, r / rmax * rh); s += R(cx + i * bw + 2, ry + rh - h, bw - 4, h, K); } });
+    sc.pop.forEach((v, k) => { const h = Math.max(4, v / 100 * rh); s += R(nowX + k * bw + 3, ry + rh - h, bw - 6, h, P, { stroke: K, sw: 2 }); });
+    s += T(cx - 8, ry + rh, 'rain', 20, { a: 'end' });
+    [0, 6, 12, 18, 24, 30, 36, 42, 48].forEach(i => {
+      const x = cx + i * bw, lbl = i === 24 ? 'NOW' : hourLabel(sc.nowHour - 24 + i);
+      s += T(x, 476, lbl, 20, { a: i === 0 ? 'start' : i === 48 ? 'end' : 'middle', w: i === 24 ? 700 : 400 });
+    });
+    s += Ln(24, 490, 936, 490, K, 2);
+    s += T(480, 524, 'Sunrise 7:11  ·  Sunset 5:18  ·  Rain this month 2.61 in', 22, { a: 'middle' });
+    return s;
+  }
+  function optL2(sc) {
+    let s = R(0, 0, 960, 540, P);
+    s = liveHeader(s, sc);
+    s += sc.icon === 'storm' ? stormIcon(84, 132, 1.1) : icon(sc.icon, 84, 136, 1.1);
+    s += T(156, 216, sc.temp, 150, { w: 700 });
+    s += T(28, 262, sc.cond.replace('  ·  ', ' · '), 28);
+    s = bigSlot(s, sc, 536, 68, 400, 180, true);
+    s += Ln(24, 278, 936, 278, K, 2);
+    const units = ['mph', 'in', '%', 'in'];
+    sc.stats.forEach((st, i) => {
+      const x = 24 + i * 228;
+      if (i) s += Ln(x, 290, x, 392, L, 1);
+      s += T(x + 16, 310, st[0], 20, { w: 700, ls: 1 });
+      s += T(x + 16, 360, `${esc(st[1])}<tspan font-size="22" font-weight="400" dx="4">${units[i]}</tspan>`, 48, { w: 700, raw: true });
+      const sub = st[3].replace(/ ?[↓↑]$/, '').replace('dew point', 'dew pt');
+      s += T(x + 16, 390, sub, 20);
+      if (/[↓↑]$/.test(st[3])) s += triUp(x + 16 + sub.length * 9.6 + 14, 388, st[3].endsWith('↑'));
+    });
+    s += Ln(24, 404, 936, 404, K, 2);
+    const cx = 72, cy = 418, cw = 864, ch = 70, half = cw / 2, nowX = cx + half, bw = half / 24;
+    const all = sc.past.concat(sc.future), mn = Math.min(...all) - 2, mx = Math.max(...all) + 2;
+    const rmax = Math.max(0.05, ...sc.rain);
+    sc.rain.forEach((r, i) => { if (r > 0) { const h = Math.max(4, r / rmax * 30); s += R(cx + i * bw + 2, cy + ch - h, bw - 4, h, K); } });
+    sc.pop.forEach((v, k) => { const h = Math.max(4, v / 100 * 30); s += R(nowX + k * bw + 3, cy + ch - h, bw - 6, h, P, { stroke: K, sw: 2 }); });
+    const pp = pts(sc.past, cx, cy, half, ch, mn, mx), fp = pts(sc.future, nowX, cy, half, ch, mn, mx);
+    s += poly(pp, K, 4) + poly(fp, K, 4, '12 8') + Ln(nowX, cy - 4, nowX, cy + ch, K, 2) + `<circle cx="${nowX}" cy="${pp[24][1]}" r="7" fill="${K}"/>`;
+    s += T(cx - 8, pp[0][1] + 8, `${Math.round(sc.past[0])}°`, 20, { a: 'end', w: 700 });
+    s += Ln(cx, cy + ch, cx + cw, cy + ch, K, 1);
+    [[0, '-24 h'], [24, 'NOW'], [48, '+24 h']].forEach(([i, l]) => s += T(cx + i * bw, 526, l, 22, { a: i === 0 ? 'start' : i === 48 ? 'end' : 'middle', w: i === 24 ? 700 : 400 }));
+    s += T(cx + 12 * bw, 526, 'measured', 20, { a: 'middle' }) + T(cx + 36 * bw, 526, 'forecast', 20, { a: 'middle' });
+    return s;
+  }
+  function optL3(sc) {
+    let s = R(0, 0, 960, 540, P);
+    s = liveHeader(s, sc);
+    s = liveTopL(s, sc);
+    s += T(28, 294, 'NEXT 12 HOURS', 20, { w: 700, ls: 2 });
+    const icons = ['partly', 'partly', 'clear-n', 'cloud', 'cloud', 'rain'];
+    const sw = 912 / 6;
+    for (let j = 0; j < 6; j++) {
+      const k = (j + 1) * 2, x = 24 + j * sw, mid = x + sw / 2;
+      if (j) s += Ln(x, 306, x, 480, L, 1);
+      s += T(mid, 330, hourLabel(sc.nowHour + k), 24, { a: 'middle', w: 700 });
+      const ic = icons[j];
+      s += ic === 'clear-n' ? moon(mid, 372, 20, K, P) : icon(ic, mid, 372, 0.55);
+      s += T(mid, 440, `${Math.round(sc.future[k])}°`, 44, { a: 'middle', w: 700 });
+      s += T(mid, 472, `${sc.pop[k]}% rain`, 22, { a: 'middle' });
+    }
+    s += Ln(24, 490, 936, 490, K, 2);
+    s += T(480, 524, 'Last 24 h:  high 68°  ·  low 54°  ·  rain 0.12 in', 22, { a: 'middle' });
+    return s;
+  }
+  // ---------- Live, glanceable ----------
+  const calmG = { temp: '68°', cond: 'Partly cloudy', feels: 'Feels 67°', icon: 'partly', wind: '8', rain: '0.12', hum: '54', pres: '30.02', presUp: false, hi: '71°', lo: '52°',
+    later: [['5 PM', 'partly', 64], ['8 PM', 'moon', 57], ['11 PM', 'cloud', 51], ['2 AM', 'rain', 48]], outlook: 'Rain likely Sunday morning · 65%', alert: null };
+  const stormG = { temp: '63°', cond: 'Thunderstorm', feels: 'Feels 63°', icon: 'storm', wind: '18', rain: '0.65', hum: '91', pres: '29.84', presUp: true, hi: '74°', lo: '58°',
+    later: [], outlook: '', alert: { big: '28 lightning strikes', sub: 'in the last 3 hours · nearest 3 mi' } };
+  function gHeader(s, time) {
+    s += T(24, 34, 'HIGHGARDEN - STARK ST. TEMPEST', 20, { w: 700, ls: 2 });
+    s += T(882, 34, time, 24, { a: 'end' });
+    s += battery(894, 19, 0.8);
+    s += Ln(24, 50, 936, 50, K, 2);
+    return s;
+  }
+  function gIcon(kind, cx, cy, sc) { return kind === 'storm' ? stormIcon(cx, cy, sc) : kind === 'moon' ? moon(cx, cy, 22 * sc, K, P) : icon(kind, cx, cy, sc); }
+  function alertBand(s, a, y, h) {
+    s += R(0, y, 960, h, K);
+    s += bolt(74, y + h / 2, 4, P);
+    s += T(140, y + h / 2 - 2, a.big, 46, { w: 700, fill: P });
+    s += T(140, y + h / 2 + 40, a.sub, 28, { fill: P });
+    return s;
+  }
+  function optG1(g) {
+    let s = R(0, 0, 960, 540, P);
+    s = gHeader(s, g === stormG ? '8:00 PM' : '2:00 PM');
+    s += gIcon(g.icon, 96, 150, 1.25);
+    s += T(180, 254, g.temp, 184, { w: 700 });
+    s += T(32, 316, g.cond, 36, { w: 700 });
+    [['Wind', g.wind, 'mph'], ['Rain today', g.rain, 'in'], ['Humidity', g.hum, '%']].forEach((r, i) => {
+      const y = 126 + i * 86;
+      s += T(580, y, r[0], 28) + T(936, y + 6, `${r[1]}<tspan font-size="28" font-weight="400" dx="6">${r[2]}</tspan>`, 60, { w: 700, a: 'end', raw: true });
+      if (i < 2) s += Ln(580, y + 28, 936, y + 28, L, 1);
+    });
+    s += Ln(24, 340, 936, 340, K, 2);
+    if (g.alert) return alertBand(s, g.alert, 342, 198);
+    const sw = 912 / 4;
+    g.later.forEach((l, i) => {
+      const x = 24 + i * sw, mid = x + sw / 2;
+      if (i) s += Ln(x, 360, x, 520, L, 1);
+      s += T(mid, 384, l[0], 26, { a: 'middle', w: 700 });
+      s += gIcon(l[1], mid, 434, 0.62);
+      s += T(mid, 512, `${l[2]}°`, 56, { a: 'middle', w: 700 });
+    });
+    return s;
+  }
+  function optG2(g) {
+    let s = R(0, 0, 960, 540, P);
+    s = gHeader(s, '2:00 PM');
+    s += gIcon(g.icon, 84, 138, 1.1);
+    s += T(158, 224, g.temp, 160, { w: 700 });
+    s += T(490, 120, 'High', 26) + T(700, 124, g.hi, 52, { w: 700, a: 'end' });
+    s += T(490, 196, 'Low', 26) + T(700, 200, g.lo, 52, { w: 700, a: 'end' });
+    s += Ln(740, 70, 740, 214, L, 1);
+    s += T(770, 104, 'Wind', 24) + T(936, 152, `${g.wind}<tspan font-size="24" font-weight="400" dx="4">mph</tspan>`, 48, { w: 700, a: 'end', raw: true });
+    s += T(770, 182, 'Rain', 24) + T(936, 224, `${g.rain}<tspan font-size="24" font-weight="400" dx="4">in</tspan>`, 48, { w: 700, a: 'end', raw: true });
+    s += T(32, 264, g.cond, 30, { w: 700 });
+    s += Ln(24, 280, 936, 280, K, 2);
+    const p12 = calm.past.slice(12), f12 = calm.future.slice(0, 13);
+    const cx = 40, cy = 318, cw = 880, ch = 120, half = cw / 2, nowX = cx + half;
+    const all = p12.concat(f12.slice(1)), mn = Math.min(...all) - 2, mx = Math.max(...all) + 3;
+    const pp = pts(p12, cx, cy, half, ch, mn, mx), fp = pts(f12, nowX, cy, half, ch, mn, mx);
+    const bw = half / 12, rr = calm.rain.slice(12), rmax = Math.max(0.05, ...rr);
+    rr.forEach((r, i) => { if (r > 0) { const h = Math.max(5, r / rmax * 36); s += R(cx + i * bw + 4, 476 - h, bw - 8, h, K); } });
+    calm.pop.slice(0, 12).forEach((v, k) => { const h = Math.max(5, v / 100 * 36); s += R(nowX + k * bw + 4, 476 - h, bw - 8, h, P, { stroke: K, sw: 2 }); });
+    s += Ln(cx, 476, cx + cw, 476, K, 2);
+    s += poly(pp, K, 5) + poly(fp, K, 5, '14 10');
+    s += Ln(nowX, cy - 10, nowX, 476, K, 2) + `<circle cx="${nowX}" cy="${pp[12][1]}" r="10" fill="${K}"/>`;
+    let hi = 0, lo = 0; all.forEach((v, i) => { if (v > all[hi]) hi = i; if (v < all[lo]) lo = i; });
+    const P2 = pp.concat(fp.slice(1));
+    [[hi, -18], [lo, 38]].forEach(([i, dy]) => { if (i !== 12) s += `<circle cx="${P2[i][0]}" cy="${P2[i][1]}" r="6" fill="${K}"/>` + R(P2[i][0] - 34, P2[i][1] + dy - 26, 68, 32, P) + T(P2[i][0], P2[i][1] + dy, `${Math.round(all[i])}°`, 28, { w: 700, a: 'middle' }); });
+    s += T(cx, 518, '12 h ago', 24) + T(nowX, 518, 'NOW', 26, { w: 700, a: 'middle' }) + T(cx + cw, 518, 'in 12 h', 24, { a: 'end' });
+    return s;
+  }
+  function optG3(g) {
+    let s = R(0, 0, 960, 540, P);
+    s = gHeader(s, g === stormG ? '8:00 PM' : '2:00 PM');
+    s += gIcon(g.icon, 80, 122, 1.0);
+    s += T(146, 140, g.cond, 34, { w: 700 });
+    s += T(24, 330, g.temp, 184, { w: 700 });
+    s += T(32, 380, g.feels, 30);
+    s += Ln(470, 66, 470, 384, K, 2);
+    const cells = [['WIND', g.wind, 'mph'], ['RAIN TODAY', g.rain, 'in'], ['HUMIDITY', g.hum, '%'], ['PRESSURE', g.pres, '']];
+    cells.forEach((c, i) => {
+      const x = 498 + (i % 2) * 226, y = 70 + Math.floor(i / 2) * 160;
+      s += T(x, y + 30, c[0], 22, { w: 700, ls: 1.5 });
+      s += T(x, y + 112, `${c[1]}${c[2] ? `<tspan font-size="28" font-weight="400" dx="4">${c[2]}</tspan>` : ''}`, 66, { w: 700, raw: true });
+      if (i === 3) s += g.presUp ? `<polygon points="${x + 200},${y + 66} ${x + 186},${y + 92} ${x + 214},${y + 92}" fill="${K}"/>` : `<polygon points="${x + 200},${y + 112} ${x + 186},${y + 86} ${x + 214},${y + 86}" fill="${K}"/>`;
+    });
+    s += Ln(498, 222, 936, 222, L, 1);
+    s += Ln(24, 400, 936, 400, K, 2);
+    if (g.alert) return alertBand(s, g.alert, 402, 138);
+    s += T(32, 452, 'NEXT', 22, { w: 700, ls: 2 });
+    s += T(32, 500, g.outlook, 40, { w: 700 });
+    return s;
+  }
+  // ---------- G1 top + G2 chart iterations ----------
+  function hTop(s, g, time) {
+    s = gHeader(s, time);
+    s += gIcon(g.icon, 92, 136, 1.15);
+    s += T(176, 236, g.temp, 170, { w: 700 });
+    s += T(32, 292, g.cond, 34, { w: 700 });
+    [['Wind', g.wind, 'mph'], ['Rain today', g.rain, 'in'], ['Humidity', g.hum, '%']].forEach((r, i) => {
+      const y = 112 + i * 78;
+      s += T(580, y, r[0], 28) + T(936, y + 6, `${r[1]}<tspan font-size="28" font-weight="400" dx="6">${r[2]}</tspan>`, 56, { w: 700, a: 'end', raw: true });
+      if (i < 2) s += Ln(580, y + 26, 936, y + 26, L, 1);
+    });
+    s += Ln(24, 316, 936, 316, K, 2);
+    return s;
+  }
+  // series: back hours of measured + fwd hours of forecast, hourly; returns geometry helpers
+  function hChart(s, opt) {
+    const back = opt.back, fwd = opt.fwd, n = back + fwd;
+    const meas = calm.past.slice(24 - back), fc = calm.future.slice(0, fwd + 1);
+    const all = meas.concat(fc.slice(1));
+    const rain = opt.rain || calm.rain.slice(24 - back), pop = calm.pop.slice(0, fwd);
+    const cx = 44, cw = 872, cy = opt.cy, ch = opt.ch, base = opt.base;
+    const X = i => cx + i / n * cw;
+    const mn = Math.min(...all) - 3, mx = Math.max(...all) + 3;
+    const Y = v => cy + ch - (v - mn) / (mx - mn) * ch;
+    const bw = cw / n, rmax = Math.max(0.05, ...rain), rh = opt.rh;
+    if (opt.vgrid) for (let i = 0; i <= n; i += opt.vgrid) if (i !== back) s += Ln(X(i), cy - 8, X(i), base, L, 1);
+    rain.forEach((r, i) => { if (r > 0) { const h = Math.max(5, r / rmax * rh); s += R(X(i) + 3, base - h, bw - 6, h, K); } });
+    pop.forEach((v, k) => { const h = Math.max(5, v / 100 * rh); s += R(X(back + k) + 3, base - h, bw - 6, h, P, { stroke: K, sw: 2 }); });
+    s += Ln(cx, base, cx + cw, base, K, 2);
+    const mp = meas.map((v, i) => [X(i), Y(v)]), fp = fc.map((v, k) => [X(back + k), Y(v)]);
+    s += poly(mp, K, 5) + poly(fp, K, 5, '14 10');
+    s += Ln(X(back), cy - 10, X(back), base, K, 2) + `<circle cx="${X(back)}" cy="${Y(meas[back])}" r="10" fill="${K}"/>`;
+    return { X, Y, all, back, n, cx, cw, base, s };
+  }
+  function label(s, x, y, txt, size) {
+    const w = txt.length * size * 0.56 + 10;
+    return s + R(x - w / 2, y - size, w, size + 8, P) + T(x, y, txt, size, { w: 700, a: 'middle' });
+  }
+  function hiLo(s, c, withTime) {
+    let hi = 0, lo = 0; c.all.forEach((v, i) => { if (v > c.all[hi]) hi = i; if (v < c.all[lo]) lo = i; });
+    [[hi, -16], [lo, 36]].forEach(([i, dy]) => {
+      if (i === c.back) return;
+      const x = Math.min(Math.max(c.X(i), c.cx + 50), c.cx + c.cw - 50), y = c.Y(c.all[i]);
+      s += `<circle cx="${c.X(i)}" cy="${y}" r="6" fill="${K}"/>`;
+      s = label(s, x, y + dy, withTime ? `${Math.round(c.all[i])}° ${hourLabel(NOW_HOUR - c.back + i)}` : `${Math.round(c.all[i])}°`, 26);
+    });
+    return s;
+  }
+  function optH1() {
+    let s = R(0, 0, 960, 540, P);
+    s = hTop(s, calmG, '2:00 PM');
+    const c = hChart(s, { back: 12, fwd: 12, cy: 350, ch: 92, base: 488, rh: 34 }); s = c.s;
+    for (let i = 0; i <= c.n; i += 3) {
+      s += Ln(c.X(i), c.base, c.X(i), c.base + 8, K, 2);
+      s += T(c.X(i), 522, i === c.back ? 'NOW' : hourLabel(NOW_HOUR - c.back + i), 22, { a: i === 0 ? 'start' : i === c.n ? 'end' : 'middle', w: i === c.back ? 700 : 400 });
+    }
+    return hiLo(s, c, false);
+  }
+  function optH2() {
+    let s = R(0, 0, 960, 540, P);
+    s = hTop(s, calmG, '2:00 PM');
+    const c = hChart(s, { back: 12, fwd: 12, cy: 380, ch: 66, base: 488, rh: 30, vgrid: 6 }); s = c.s;
+    s += T(c.cx, 344, 'Rain: 0.12 in fell overnight', 22);
+    s += T(c.cx + c.cw, 344, '65% chance after midnight', 22, { a: 'end' });
+    for (let i = 0; i <= c.n; i += 6)
+      s += T(c.X(i), 522, i === c.back ? 'NOW' : hourLabel(NOW_HOUR - c.back + i), 24, { a: i === 0 ? 'start' : i === c.n ? 'end' : 'middle', w: i === c.back ? 700 : 400 });
+    return hiLo(s, c, true);
+  }
+  function optH3(rain) {
+    let s = R(0, 0, 960, 540, P);
+    s = hTop(s, rain ? { ...calmG, rain: '0.21', icon: 'rain', cond: 'Light rain' } : calmG, '2:00 PM');
+    const c = hChart(s, { back: 6, fwd: 18, cy: 368, ch: 76, base: 488, rh: 30, vgrid: 3, rain }); s = c.s;
+    if (rain) s += T(c.cx, 344, `Rain, last 6 h: ${rain.reduce((a, b) => a + b, 0).toFixed(2)} in`, 22);
+    for (let i = 0; i <= c.n; i += 3) {
+      const x = c.X(i), a = i === 0 ? 'start' : i === c.n ? 'end' : 'middle';
+      s += T(x, 522, i === c.back ? 'NOW' : hourLabel(NOW_HOUR - c.back + i), 22, { a, w: i === c.back ? 700 : 400 });
+      if (i > c.back && i % 3 === 0) { s += `<circle cx="${x}" cy="${c.Y(c.all[i])}" r="5" fill="${K}"/>`; s = label(s, Math.min(x, c.cx + c.cw - 24), c.Y(c.all[i]) - 14, `${Math.round(c.all[i])}°`, 24); }
+    }
+    return s;
+  }
+  function optH4() {
+    let s = R(0, 0, 960, 540, P);
+    s = hTop(s, stormG, '8:00 PM');
+    return alertBand(s, stormG.alert, 318, 222);
+  }
+  document.getElementById('optH1').innerHTML = optH1();
+  document.getElementById('optH2').innerHTML = optH2();
+  document.getElementById('optH3').innerHTML = optH3();
+  document.getElementById('optH3r').innerHTML = optH3([0, 0.02, 0.06, 0.08, 0.03, 0.02]);
+  document.getElementById('optH4').innerHTML = optH4();
+
+  document.getElementById('optG1a').innerHTML = optG1(calmG);
+  document.getElementById('optG1b').innerHTML = optG1(stormG);
+  document.getElementById('optG2').innerHTML = optG2(calmG);
+  document.getElementById('optG3a').innerHTML = optG3(calmG);
+  document.getElementById('optG3b').innerHTML = optG3(stormG);
+
+  document.getElementById('optL1a').innerHTML = optL1(calm);
+  document.getElementById('optL1b').innerHTML = optL1(storm);
+  document.getElementById('optL2').innerHTML = optL2(calm);
+  document.getElementById('optL3').innerHTML = optL3(calm);
+
+  document.getElementById('optN1').innerHTML = optN1();
+  document.getElementById('optN2').innerHTML = optN2();
+  document.getElementById('optN3').innerHTML = optN3();
+
   document.getElementById('optNight').innerHTML = optNight();
   document.getElementById('optCharge').innerHTML = optCharge();
 

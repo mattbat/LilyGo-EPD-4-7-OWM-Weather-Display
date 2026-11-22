@@ -249,8 +249,8 @@ void test_hilo_marker_draws_inside_rect() {
   for (int i = 0; i < 25; i++) v[i] = 60 + 10 * sinf(i / 4.0f);   // max near i=6, min near i=19
   AxisRange ax = autoRange(v, 25);
   ChartRect r = {100, 100, 400, 112};
-  TEST_ASSERT_TRUE(drawHiLoMarker(g, v, 25, r, ax, true, AtkB19));
-  TEST_ASSERT_TRUE(drawHiLoMarker(g, v, 25, r, ax, false, AtkB19));
+  TEST_ASSERT_TRUE(drawHiLoMarker(g, v, 25, r, ax, true, AtkB20));
+  TEST_ASSERT_TRUE(drawHiLoMarker(g, v, 25, r, ax, false, AtkB20));
   // everything drawn is inside the rect
   TEST_ASSERT_EQUAL_INT(0, countNot(0, 0, PANEL_WIDTH - 1, 99, 15));
   TEST_ASSERT_EQUAL_INT(0, countNot(0, 213, PANEL_WIDTH - 1, PANEL_HEIGHT - 1, 15));
@@ -259,7 +259,7 @@ void test_hilo_marker_draws_inside_rect() {
   // skipped at the ends: monotonic data has its max at the last sample
   g.clear(15);
   float m[] = {1, 2, 3, 4, 5, 6, 7};
-  TEST_ASSERT_FALSE(drawHiLoMarker(g, m, 7, r, autoRange(m, 7), true, AtkB19));
+  TEST_ASSERT_FALSE(drawHiLoMarker(g, m, 7, r, autoRange(m, 7), true, AtkB20));
   TEST_ASSERT_EQUAL_INT(0, countNot(0, 0, PANEL_WIDTH - 1, PANEL_HEIGHT - 1, 15));
 }
 void test_hilo_label_clamped_at_top() {
@@ -267,13 +267,13 @@ void test_hilo_label_clamped_at_top() {
   float v[] = {0, 0, 0, 0, 20, 0, 0, 0, 0};
   AxisRange ax = {0, 20, true};
   ChartRect r = {100, 100, 200, 60};
-  TEST_ASSERT_TRUE(drawHiLoMarker(g, v, 9, r, ax, true, AtkB19));
+  TEST_ASSERT_TRUE(drawHiLoMarker(g, v, 9, r, ax, true, AtkB20));
   TEST_ASSERT_EQUAL_INT(0, countNot(0, 0, PANEL_WIDTH - 1, 99 - 5, 15));   // only the dot may poke out (r=4)
 }
 void test_grid_draws_lines_and_labels() {
   AxisRange ax = {45, 75, true};
   ChartRect r = {100, 100, 300, 120};
-  drawGrid(g, r, ax, AtkR15, 0, COL_XL);
+  drawGrid(g, r, ax, AtkR20, 0, COL_XL);
   // 50, 60, 70 -> y = 220 - (v-45)/30*120
   TEST_ASSERT_EQUAL_UINT8(COL_XL, g.get(200, 220 - 20));
   TEST_ASSERT_EQUAL_UINT8(COL_XL, g.get(200, 220 - 60));
@@ -302,7 +302,7 @@ void test_sparkline() {
 void test_lightning_row() {
   uint16_t none[24] = {0};
   ChartRect r = {100, 100, 240, 34};
-  TEST_ASSERT_FALSE(drawLightningRow(g, none, 24, r, AtkB13, AtkR14));
+  TEST_ASSERT_FALSE(drawLightningRow(g, none, 24, r, AtkB20, AtkR20));
   int grey = 0, dark = 0;
   for (int y = 90; y < 140; y++) for (int x = 90; x < 400; x++) { uint8_t v = g.get(x, y); if (v != 15) grey++; if (v < 5) dark++; }
   TEST_ASSERT_TRUE(grey > 30);     // the message is there
@@ -310,7 +310,7 @@ void test_lightning_row() {
   g.clear(15);
   uint16_t s[24] = {0};
   s[5] = 14;
-  TEST_ASSERT_TRUE(drawLightningRow(g, s, 24, r, AtkB13, AtkR14));
+  TEST_ASSERT_TRUE(drawLightningRow(g, s, 24, r, AtkB20, AtkR20));
   int x5 = 100 + 5 * 10 + 5;
   TEST_ASSERT_TRUE(countBox(x5 - 6, 100, x5 + 6, 118, 4) > 10);      // bolt
   TEST_ASSERT_TRUE(countBox(x5 - 10, 120, x5 + 10, 134, 4) > 8);     // count text
@@ -369,7 +369,7 @@ void test_hour_axis_labels() {
 }
 void test_hour_axis_draw_stays_inside() {
   HourAxis ax = {1795291200u - 24 * 3600u, 48, 6, 24, -6 * 3600};
-  drawHourAxis(g, 60, 870, 300, ax, AtkR15, AtkB15);
+  drawHourAxis(g, 60, 870, 300, ax, AtkR20, AtkB20);
   TEST_ASSERT_EQUAL_INT(0, countNot(0, 0, 59, PANEL_HEIGHT - 1, 15));
   TEST_ASSERT_EQUAL_INT(0, countNot(931, 0, PANEL_WIDTH - 1, PANEL_HEIGHT - 1, 15));
   TEST_ASSERT_TRUE(countBox(60, 280, 930, 305, 5) > 100);
