@@ -119,6 +119,9 @@ struct WeatherData {
 
   bool  rainMonthYearKnown;
   float rainMonthIn, rainYearIn;
+
+  // Set by the firmware (not parsed from JSON):
+  float pressureOffsetMb;   // sea level minus station pressure from the station obs (NAN unknown)
 };
 
 // Reset to an empty, invalid state (all floats NAN where unknown).

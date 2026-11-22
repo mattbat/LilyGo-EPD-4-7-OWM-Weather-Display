@@ -63,6 +63,7 @@ void weatherDataInit(WeatherData& d) {
   DaySummary& s = d.today;
   s.highF = s.lowF = s.rainIn = s.peakGustMph = s.lastTempF = s.lastWindMph = s.lastHumidityPct = NAN;
   d.rainMonthIn = d.rainYearIn = NAN;
+  d.pressureOffsetMb = NAN;
 }
 
 // ---------------------------------------------------------------- filters
@@ -86,7 +87,7 @@ void makeForecastFilter(JsonDocument& f) {
 
 void makeStationObsFilter(JsonDocument& f) {
   f["status"]["status_code"] = true;
-  const char* k[] = {"timestamp", "air_temperature", "feels_like", "dew_point", "sea_level_pressure",
+  const char* k[] = {"timestamp", "air_temperature", "feels_like", "dew_point", "sea_level_pressure", "station_pressure",
                      "relative_humidity", "wind_avg", "wind_gust", "wind_direction", "uv", "solar_radiation",
                      "precip", "precip_accum_last_1hr", "precip_accum_local_day", "precip_accum_local_yesterday",
                      "precip_accum_local_yesterday_final", "pressure_trend",
@@ -194,6 +195,8 @@ ParseStatus applyStationObs(JsonVariantConst root, WeatherData& out) {
   if (getF(o["precip_accum_local_yesterday"], x) || getF(o["precip_accum_local_yesterday_final"], x))
     c.rainYesterdayIn = mmToIn(x);
   else c.rainYesterdayIn = NAN;
+  float sea, stn;
+  if (getF(o["sea_level_pressure"], sea) && getF(o["station_pressure"], stn)) out.pressureOffsetMb = sea - stn;
   c.strikes1h = (uint16_t)fOr(o["lightning_strike_count_last_1hr"], 0);
   c.strikes3h = (uint16_t)fOr(o["lightning_strike_count_last_3hr"], 0);
   c.lastStrikeMi = getF(o["lightning_strike_last_distance"], x) ? kmToMi(x) : NAN;   // km in the API
