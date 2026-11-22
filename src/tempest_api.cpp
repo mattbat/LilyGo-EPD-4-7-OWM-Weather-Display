@@ -20,9 +20,23 @@ bool netConnect(uint32_t timeoutMs) {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   uint32_t t0 = millis();
   while (WiFi.status() != WL_CONNECTED) {
-    if (millis() - t0 > timeoutMs) return false;
+    if (millis() - t0 > timeoutMs) {
+      // Diagnose: status 1 = network not found, 4 = connect failed (often wrong password), 6 = disconnected.
+      Serial.printf("wifi status %d after %u ms\n", (int)WiFi.status(), (unsigned)(millis() - t0));
+      int n = WiFi.scanNetworks();
+      bool seen = false;
+      for (int i = 0; i < n; i++) {
+        if (WiFi.SSID(i) == WIFI_SSID) {
+          seen = true;
+          Serial.printf("wifi target seen: rssi %d dBm, channel %d, auth %d\n", WiFi.RSSI(i), WiFi.channel(i), (int)WiFi.encryptionType(i));
+        }
+      }
+      if (!seen) Serial.printf("wifi target NOT seen among %d networks (2.4 GHz only)\n", n);
+      return false;
+    }
     delay(100);
   }
+  Serial.printf("wifi connected in %u ms, rssi %d dBm\n", (unsigned)(millis() - t0), WiFi.RSSI());
   return true;
 }
 
@@ -91,6 +105,7 @@ template <class F> static FetchResult getOnce(const char* url, const char* what,
   char safe[200];
   redactUrl(url, safe, sizeof safe);
   Serial.printf("GET %s\n", safe);
+  const uint32_t tStart = millis();
   FetchResult r = makeResult(FETCH_OK, what);
   WiFiClientSecure client;
   client.setInsecure();   // no certificate check: the data is public weather and the token is revocable;
@@ -108,6 +123,7 @@ template <class F> static FetchResult getOnce(const char* url, const char* what,
   ParseStatus ps = consume(in);
   if (ps != PARSE_OK) { r.status = FETCH_ERR_PARSE; r.parse = ps; }
   http.end();
+  Serial.printf("  %s: http %d, parse %d, %lu ms\n", what, code, (int)ps, (unsigned long)(millis() - tStart));
   return r;
 }
 

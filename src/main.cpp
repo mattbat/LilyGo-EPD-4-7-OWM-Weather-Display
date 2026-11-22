@@ -106,6 +106,7 @@ void setup() {
   bool wifi = netConnect(WIFI_TIMEOUT_MS);
   Serial.printf("wifi %s (%lu ms)\n", wifi ? "ok" : "FAILED", (unsigned long)(millis() - t0));
   if (wifi) netSyncTime(8000);
+  Serial.printf("ntp done (%lu ms)\n", (unsigned long)(millis() - t0));
   in.timeValid = systemTimeValid();
   in.nowEpoch = time(nullptr);
   in.chargeMeMode = g_rtc.chargeMeMode;
@@ -130,6 +131,7 @@ void setup() {
     fresh = fr.status == FETCH_OK;
   }
   netOff();   // WiFi must be off before the panel refresh and sleep
+  Serial.printf("fetch done (%lu ms)\n", (unsigned long)(millis() - t0));
   if (fresh) {
     g_cache = g_work;
     g_rtc.cacheValid = true;
@@ -150,7 +152,9 @@ void setup() {
   } else {   // Overnight
     drawOvernight(g, data, st, plan.titles == TitlesMode::YesterdayToday ? TITLES_YESTERDAY_TODAY : TITLES_TODAY_TOMORROW);
   }
+  Serial.printf("render done (%lu ms)\n", (unsigned long)(millis() - t0));
   displayShow(g.fb);
+  Serial.printf("display done (%lu ms)\n", (unsigned long)(millis() - t0));
   g_rtc.chargeMeShown = false;   // the panel now shows something else
 
   goToSleep(sleepSecondsUntil(plan.wakeEpoch, time(nullptr)), t0);
