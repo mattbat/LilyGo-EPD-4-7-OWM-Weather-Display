@@ -98,18 +98,18 @@ void test_no_text_smaller_than_20px() {
 // ------------------------------------------------------------------------------------------ goldens
 struct Golden { const char* name; uint32_t sum; int dark; };
 static const Golden kGolden[] = {
-  {"live_real", 0xFCEA1417u, 41988},
+  {"live_real", 0x8AE22178u, 41359},
   {"live_storm", 0x1DA3A418u, 234003},
   {"live_raining", 0xF2A3DDD1u, 233231},
-  {"live_cold", 0xC6C4DC02u, 41604},
+  {"live_cold", 0x36F1EE4Fu, 40927},
   {"live_hot", 0x2C92E9EEu, 243106},
-  {"live_offline", 0x01682A6Au, 49089},
-  {"live_nohistory", 0x0BC5757Cu, 39710},
-  {"live_rain6h", 0xFC3F952Eu, 43376},
-  {"overnight_today", 0x7FD2F1C9u, 81210},
-  {"overnight_yesterday", 0x0722E79Au, 81093},
-  {"overnight_cold", 0x6F9499FFu, 79351},
-  {"overnight_hot", 0x09E66F16u, 80739},
+  {"live_offline", 0xEEDF4B55u, 48460},
+  {"live_nohistory", 0x240041F1u, 39103},
+  {"live_rain6h", 0x025A3107u, 42672},
+  {"overnight_today", 0x9A7D9956u, 80464},
+  {"overnight_yesterday", 0x203918BDu, 80347},
+  {"overnight_cold", 0x6EDDBD2Bu, 78605},
+  {"overnight_hot", 0xDB5DCC77u, 79572},
   {"charge_me", 0xD4E18531u, 24644},
   {"error", 0xF7BC3272u, 14568},
 };
@@ -201,17 +201,63 @@ void test_rain_note_only_when_rain_in_last_6_hours() {
 }
 void test_rain_bars_measured_solid_forecast_outlined() {
   renderScene("live_rain6h", g);
-  // measured hour 20 (slot i = 2): solid black bar above the baseline y 488
-  int bx = 44 + (int)(2.5f * 872 / 24);
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  const int64_t nowT = d.cur.time;
+  // measured bucket 20 spans its real hour: solid black in the middle of that hour
+  int bx = liveChartX((int64_t)d.histStartEpoch + 20 * 3600 + 1800, nowT);
   TEST_ASSERT_TRUE(g.get(bx, 484) <= 4);
   TEST_ASSERT_TRUE(g.get(bx, 470) <= 4);
-  // forecast probability bars right of the now line (x 262) are outlined: paper inside a 30 px bar
-  setUp(); TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  // forecast probability bars are outlined: the 9 PM hour, paper inside a 30 px bar
+  setUp();
   d.hourly[0].precipProbPct = 100; d.hourly[1].precipProbPct = 100;
   drawLive(g, d, status());
-  int fx = 262 + (int)(1.5f * 872 / 24);
+  int fx = liveChartX((int64_t)d.hourly[1].time + 1800, nowT);
   TEST_ASSERT_TRUE(g.get(fx, 475) >= 13);                          // paper inside the outlined bar
   TEST_ASSERT_TRUE(g.get(fx, 459) <= 4 || g.get(fx, 460) <= 4);   // outline at the top of the 30 px bar
+}
+void test_live_chart_x_axis_is_true_time() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  const int64_t nowT = d.cur.time;                              // 8:07 PM fetch time
+  TEST_ASSERT_EQUAL_INT(262, liveChartX(nowT, nowT));           // 44 + 6/24 * 872
+  TEST_ASSERT_EQUAL_INT(44, liveChartX(nowT - 6 * 3600, nowT));
+  TEST_ASSERT_EQUAL_INT(916, liveChartX(nowT + 18 * 3600, nowT));
+  drawLive(g, d, status());
+  // the now line is drawn at the fetch time (black column at x 262 / 263)
+  TEST_ASSERT_TRUE(darkFraction(262, 380, 263, 484, 4) > 0.9f);
+  // the 12 AM hairline sits at the x of its epoch (local midnight after the fixture day), not at a slot edge
+  int x = liveChartX(FIXTURE_DAY_START + 86400, nowT);
+  TEST_ASSERT_EQUAL_INT(262 + (int)lround((double)(FIXTURE_DAY_START + 86400 - nowT) * 872 / 86400), x);
+  int col = countNot(x, 362, x, 440, COL_PAPER), left = countNot(x - 3, 362, x - 3, 440, COL_PAPER);
+  TEST_ASSERT_TRUE(col > 40);
+  TEST_ASSERT_TRUE(left < col / 2);
+  // and its label "12 AM" is centred under it
+  TEST_ASSERT_TRUE(countNot(x - 14, 505, x + 14, 526, COL_PAPER) > 40);
+}
+void test_overnight_top_never_touches() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  const char* conds[] = {"Rain", "Thunderstorms Possible", "Rain and Snow Possible", "Thunderstorms Likely"};
+  int title = -1, hilo = -1;
+  for (const char* c : conds) {
+    snprintf(d.daily[1].conditions, sizeof d.daily[1].conditions, "%s", c);
+    setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
+    TEST_ASSERT_TRUE(guardsIntact());
+    int t = countNot(480, 84, 936, 106, COL_PAPER), h = countNot(596, 128, 936, 190, COL_PAPER);
+    if (title < 0) { title = t; hilo = h; }
+    TEST_ASSERT_EQUAL_INT_MESSAGE(title, t, c);                      // title row identical: the condition never reaches it
+    TEST_ASSERT_EQUAL_INT_MESSAGE(hilo, h, c);                       // nor the high / low
+    TEST_ASSERT_TRUE_MESSAGE(countNot(480, 196, 936, 228, COL_PAPER) > 200, c);   // condition on its own line
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(480, 229, 936, 231, COL_PAPER), c);   // clear of the rule at y 233-234
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, countNot(937, 190, 959, 230, COL_PAPER), c);
+  }
+}
+void test_overnight_rain_labels_only_for_10_percent_or_more() {
+  TEST_ASSERT_TRUE(loadFixtureSet(nullptr, d));
+  for (int i = 0; i < d.hourlyCount; i++) d.hourly[i].precipProbPct = 9;
+  drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
+  TEST_ASSERT_EQUAL_INT(0, countNot(84, 395, 924, 403, COL_PAPER));        // no labels (and no stray row of "0%")
+  for (int i = 0; i < d.hourlyCount; i++) d.hourly[i].precipProbPct = 100;
+  setUp(); drawOvernight(g, d, status(), TITLES_TODAY_TOMORROW);
+  TEST_ASSERT_TRUE(countNot(84, 393, 924, 400, COL_PAPER) > 150);          // 100 % bars are 48 px tall: labels right above them
 }
 
 void test_overnight_header_bar_is_black() {
@@ -219,9 +265,9 @@ void test_overnight_header_bar_is_black() {
   TEST_ASSERT_TRUE(darkFraction(0, 0, 959, 63) > 0.8f);
   TEST_ASSERT_TRUE(darkFraction(0, 0, 10, 63) > 0.99f);
   TEST_ASSERT_TRUE(g.get(480, 66) == COL_PAPER);   // below the bar: paper
-  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 212) <= 4 || g.get(x, 211) <= 4);   // rule under the summary
+  for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 234) <= 4 || g.get(x, 233) <= 4);   // rule under the summary
   for (int x = 24; x < 936; x += 37) TEST_ASSERT_TRUE(g.get(x, 500) <= 4 || g.get(x, 499) <= 4);   // footer rule
-  TEST_ASSERT_TRUE(darkFraction(451, 80, 452, 199) > 0.99f);                                         // vertical rule
+  TEST_ASSERT_TRUE(darkFraction(451, 80, 452, 222) > 0.99f);                                         // vertical rule
   TEST_ASSERT_TRUE(countNot(100, 515, 860, 536, COL_PAPER) > 400);                                   // footer line
   setUp(); renderScene("live_real", g);
   TEST_ASSERT_TRUE(darkFraction(0, 0, 959, 55) < 0.2f);
@@ -413,6 +459,9 @@ int main() {
   RUN_TEST(test_offline_chip_only_when_offline);
   RUN_TEST(test_rain_note_only_when_rain_in_last_6_hours);
   RUN_TEST(test_rain_bars_measured_solid_forecast_outlined);
+  RUN_TEST(test_live_chart_x_axis_is_true_time);
+  RUN_TEST(test_overnight_top_never_touches);
+  RUN_TEST(test_overnight_rain_labels_only_for_10_percent_or_more);
   RUN_TEST(test_overnight_header_bar_is_black);
   RUN_TEST(test_charge_me_and_error_screens);
   RUN_TEST(test_all_nan_and_empty_data_renders_cleanly);
