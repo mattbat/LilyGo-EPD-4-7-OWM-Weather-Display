@@ -196,3 +196,15 @@ Run in this order. Tasks 2, 3 and 4 can run in parallel once task 1 is merged. E
 
 - Fill in `include/secrets.h` (WiFi and Tempest token / station ID).
 - Connect the board by USB for task 7.
+
+## Status after first flash (2026-11-21)
+
+Tasks 1-6 are merged. The firmware runs on the board: WiFi, all Tempest calls, render, display refresh and deep sleep work. Measured awake time is 13.5 s on a fresh boot (including the once-a-day stats call, 4.2 s) and about 9 s on a normal update.
+
+## TODO
+
+- [ ] **Check the values on the panel against the Tempest app** (temperature, feels-like, wind/gusts/direction, rain today/yesterday, humidity, dew point, pressure and trend, lightning, rain month/year, sunrise/sunset).
+- [ ] **Tune greyscale and sizes from a photo of the panel** (user will take one). Adjust palette.h greys and any font sizes that are hard to read.
+- [ ] **Calibrate the battery reading.** The board reports 4.87 V, above an 18650's 4.2 V maximum. Confirm whether the battery was connected, compare with a multimeter, and fix the divider factor in battery.cpp (and the Charge me thresholds if needed).
+- [ ] Confirm GitHub CI passes on Linux, especially the golden checksums in test/test_screens.
+- [ ] Measure deep-sleep current if possible, and update the battery-life estimate.
